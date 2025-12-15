@@ -1,4 +1,4 @@
-# Immergo
+# Immergo - Immersive Language Learning with Live API
 
 Immergo is an immersive language learning application powered by the Google Gemini Live SDK. It simulates real-world roleplay scenarios (e.g., buying a bus ticket, ordering coffee) to help users practice speaking in various languages with an AI that acts as a native speaker.
 
