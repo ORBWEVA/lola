@@ -6,12 +6,21 @@ PROJECT_ID="your-project-id"
 SERVICE_NAME="immersive-language-learning"
 REGION="us-central1"
 MODEL="gemini-live-2.5-flash-native-audio"
-SESSION_TIME_LIMIT="180"
-GLOBAL_RATE_LIMIT="1000 per hour"
-PER_USER_RATE_LIMIT="2 per minute"
+
 RECAPTCHA_SITE_KEY="your-recaptcha-site-key"
+
 REDIS_URL="redis://10.0.0.3:6379/0" # Ensure your VPC setup allows access
+SESSION_TIME_LIMIT="180"
+GLOBAL_RATE_LIMIT="100 per 5 minutes"
+PER_USER_RATE_LIMIT="2 per minute"
+
+# BigQuery Analytics (Optional)
+DATASET_ID="your-dataset-id"
+TABLE_ID="your-table-id"
+DEMO_NAME="immersive-language-learning"
+
 DEV_MODE="false" # Set to true to disable Redis/Recaptcha
+
 
 echo "📦 Building frontend..."
 npm run build
@@ -39,7 +48,10 @@ gcloud run deploy $SERVICE_NAME \
   --set-env-vars PER_USER_RATE_LIMIT="$PER_USER_RATE_LIMIT" \
   --set-env-vars RECAPTCHA_SITE_KEY=$RECAPTCHA_SITE_KEY \
   --set-env-vars REDIS_URL=$REDIS_URL \
-  --set-env-vars DEV_MODE=$DEV_MODE
+  --set-env-vars DEV_MODE=$DEV_MODE \
+  --set-env-vars DATASET_ID=$DATASET_ID \
+  --set-env-vars TABLE_ID=$TABLE_ID \
+  --set-env-vars DEMO_NAME=$DEMO_NAME
 
 
 echo "✅ Deployment command finished."

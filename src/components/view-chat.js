@@ -302,7 +302,7 @@ class ViewChat extends HTMLElement {
                     bubbles: true,
                     detail: { view: 'summary', result: result }
                 }));
-            }, 4000); // 4 seconds delay
+            }, 2500); // 2.5 seconds delay
         };
 
         this.client.addFunction(completeMissionTool);
