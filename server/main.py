@@ -14,24 +14,76 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
-from gemini_live import GeminiLive
+from server.recaptcha_validator import RecaptchaValidator
+from server.gemini_live import GeminiLive
+from server.fingerprint import generate_fingerprint
+from server.simple_tracker import simpletrack
+
+# Rate Limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+import redis
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuration
-PROJECT_ID = os.getenv("PROJECT_ID", "starter-apps-base")
+PROJECT_ID = os.getenv("PROJECT_ID", "your-project-id")
 LOCATION = os.getenv("LOCATION", "us-central1")
 MODEL = os.getenv("MODEL", "gemini-live-2.5-flash-native-audio")
 # Use a very long timeout for dev
-SESSION_TIME_LIMIT = int(os.getenv("SESSION_TIME_LIMIT", "3600"))
+SESSION_TIME_LIMIT = int(os.getenv("SESSION_TIME_LIMIT", "180"))
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
+REDIS_URL = os.getenv("REDIS_URL")
+GLOBAL_RATE_LIMIT = os.getenv("GLOBAL_RATE_LIMIT", "1000 per hour")
+PER_USER_RATE_LIMIT = os.getenv("PER_USER_RATE_LIMIT", "2 per minute")
+DEV_MODE = os.getenv("DEV_MODE", "true") == "true"
 
 # Initialize FastAPI
 app = FastAPI()
+
+# Initialize Recaptcha Validator
+recaptcha_validator = RecaptchaValidator(
+    project_id=PROJECT_ID,
+    recaptcha_key=RECAPTCHA_SITE_KEY
+)
+
+def get_fingerprint_key(request: Request):
+    return generate_fingerprint(request)
+
+def get_global_key(request: Request):
+    return "global"
+
+# Initialize Rate Limiter
+# Initialize Rate Limiter
+if DEV_MODE:
+    logger.info("🔧 DEV_MODE enabled: Rate limiting disabled (using memory storage)")
+    limiter = Limiter(key_func=get_fingerprint_key) # Defaults to memory
+else:
+    limiter = Limiter(key_func=get_fingerprint_key, storage_uri=REDIS_URL)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.on_event("startup")
+async def startup_event():
+    """Test Redis connection on startup."""
+    if REDIS_URL and not DEV_MODE:
+        try:
+            logger.info(f"Testing Redis connection to: {REDIS_URL.split('@')[-1] if '@' in REDIS_URL else REDIS_URL}")
+            
+            r = redis.from_url(REDIS_URL)
+            r.ping()
+            logger.info("✅ Redis connection successful")
+        except Exception as e:
+            logger.error(f"❌ Redis connection failed: {e}")
+            logger.error("Ensure Cloud Run is configured with a VPC Connector if using a private IP.")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,11 +101,9 @@ if os.path.exists("dist/assets"):
     app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
 if os.path.exists("dist/audio-processors"):
     app.mount("/audio-processors", StaticFiles(directory="dist/audio-processors"), name="audio-processors")
-
 # In-memory storage for valid session tokens (Token -> Timestamp)
-# In a production app, use Redis or a database
 valid_tokens: Dict[str, float] = {}
-TOKEN_EXPIRY_SECONDS = 60
+TOKEN_EXPIRY_SECONDS = 30
 
 def cleanup_tokens():
     """Remove expired tokens."""
@@ -62,19 +112,51 @@ def cleanup_tokens():
     for token in expired:
         del valid_tokens[token]
 
-@app.get("/")
-async def root():
+@app.get("/{full_path:path}")
+@simpletrack("page_view")
+async def serve_spa(full_path: str):
+    # Serve file from dist if it exists
+    file_path = f"dist/{full_path}"
+    if full_path and os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    # Fallback to index.html for SPA routing
     return FileResponse("dist/index.html")
 
 @app.post("/api/auth")
+@simpletrack("session_start")
+@limiter.limit(GLOBAL_RATE_LIMIT, key_func=get_global_key)
+@limiter.limit(PER_USER_RATE_LIMIT, key_func=get_fingerprint_key)
 async def authenticate(request: Request):
     """
-    Issues a temporary session token for WebSocket connection.
+    Validates ReCAPTCHA and issues a temporary session token for WebSocket connection.
     """
     try:
-        # Generate session token
+        data = await request.json()
+        recaptcha_token = data.get("recaptcha_token")
+        
+        if not recaptcha_token:
+            raise HTTPException(status_code=400, detail="Missing ReCAPTCHA token")
+
+        if DEV_MODE:
+            logger.info("🔧 DEV_MODE enabled: Skipping ReCAPTCHA validation")
+            validation_result = {'valid': True, 'passes_threshold': True}
+        else:
+            validation_result = recaptcha_validator.validate_token(
+                token=recaptcha_token,
+                recaptcha_action="LOGIN"
+            )
+        
+        if not validation_result['valid']:
+            logger.warning(f"ReCAPTCHA failed: {validation_result.get('error')}")
+            raise HTTPException(status_code=403, detail="ReCAPTCHA validation failed")
+            
+        if not validation_result['passes_threshold']:
+            logger.warning(f"ReCAPTCHA score too low: {validation_result.get('score')}")
+            raise HTTPException(status_code=403, detail="ReCAPTCHA score too low")
+
         session_token = str(uuid.uuid4())
-        cleanup_tokens() # Opportunistic cleanup
+        cleanup_tokens()
         valid_tokens[session_token] = time.time()
         
         return {"session_token": session_token, "session_time_limit": SESSION_TIME_LIMIT}

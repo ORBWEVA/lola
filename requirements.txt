@@ -4,3 +4,7 @@ google-genai
 python-dotenv
 websockets
 requests
+google-cloud-recaptcha-enterprise
+google-cloud-bigquery
+redis
+slowapi

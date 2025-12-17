@@ -7,18 +7,18 @@
         "target_role": "Friendly Neighbor"
     },
     {
-        "id": 1,
-        "title": "Buy a bus ticket",
-        "difficulty": "Easy",
-        "desc": "You need to get to the city center.",
-        "target_role": "Bus Driver"
-    },
-    {
         "id": 5,
         "title": "Order a Coffee",
         "difficulty": "Easy",
-        "desc": "Order a latte and a pastry to go.",
+        "desc": "Order a coffee and a pastry to go.",
         "target_role": "Busy Barista"
+    },
+    {
+        "id": 1,
+        "title": "Buy a bus ticket",
+        "difficulty": "Medium",
+        "desc": "You need to get to the city center.",
+        "target_role": "Bus Driver"
     },
     {
         "id": 2,

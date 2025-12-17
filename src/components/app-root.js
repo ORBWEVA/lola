@@ -16,7 +16,48 @@ class AppRoot extends HTMLElement {
     }
 
     connectedCallback() {
+        // Setup static layout once
+        this.innerHTML = '';
+
+        // Persistent Header (GitHub Star)
+        const header = document.createElement('div');
+        header.style.cssText = "position: absolute; top: 8px; right: 8px; z-index: 1000; display: flex; align-items: center; gap: 12px;";
+        header.innerHTML = `
+        <div style="
+            font-family: 'Brush Script MT', cursive;
+            font-size: 1.4rem;
+            color: var(--color-text-primary);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            opacity: 0.9;
+            transform: rotate(-2deg);
+            margin-top: 8px;
+            margin-bottom: 8px;
+        ">
+            <span >how it's built →</span>
+        </div>
+        <a class="github-button" href="https://github.com/zackakil/immersive-language-learning-with-live-api" data-size="large" data-show-count="true" aria-label="Star zackakil/immersive-language-learning-with-live-api on GitHub">Star</a>`;
+        this.appendChild(header);
+
+        // Inject GitHub Buttons Script (after element is added)
+        if (!document.getElementById('github-buttons-script')) {
+            const script = document.createElement('script');
+            script.id = 'github-buttons-script';
+            script.src = 'https://buttons.github.io/buttons.js';
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        // View Container
+        this.viewContainer = document.createElement('div');
+        this.viewContainer.style.height = "100%";
+        this.viewContainer.style.width = "100%";
+        this.appendChild(this.viewContainer);
+
         this.render();
+
         this.addEventListener('navigate', (e) => {
             this.state.view = e.detail.view;
             if (e.detail.mission) this.state.selectedMission = e.detail.mission;
@@ -29,7 +70,9 @@ class AppRoot extends HTMLElement {
     }
 
     render() {
-        this.innerHTML = '';
+        if (!this.viewContainer) return;
+
+        this.viewContainer.innerHTML = '';
         let currentView;
 
         switch (this.state.view) {
@@ -55,7 +98,7 @@ class AppRoot extends HTMLElement {
         }
 
         currentView.classList.add('fade-in');
-        this.appendChild(currentView);
+        this.viewContainer.appendChild(currentView);
     }
 }
 

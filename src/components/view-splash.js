@@ -16,7 +16,12 @@ class ViewSplash extends HTMLElement {
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
           <h1 style="font-size: 4.5rem; letter-spacing: -2px; margin-bottom: var(--spacing-sm);">Immergo</h1>
           <p style="font-style: italic; font-size: 1.3rem; opacity: 0.7;">Intense immersive language learning experience.</p>
-          <p style="font-size: 0.9rem; opacity: 0.5; margin-top: var(--spacing-sm);">Powered by Gemini Live API</p>
+          <p style="font-size: 1rem; opacity: 0.6; margin-top: var(--spacing-sm); color: var(--color-text-secondary); ">Powered by <br>
+          <a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/live-api" target="_blank" style=" color: var(--color-accent-primary); font-weight: bold;">Gemini Live API on Vertex AI</a>
+          </p>
+
+
+
         </div>
         
         <div style="width: 100%; margin-bottom: var(--spacing-xxl);">

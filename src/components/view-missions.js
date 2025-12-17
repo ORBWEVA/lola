@@ -3,12 +3,12 @@ import missionsData from '../data/missions.json';
 class ViewMissions extends HTMLElement {
   connectedCallback() {
     const options = `
-            <option>🇪🇬 Arabic</option>
-            <option>🇩🇪 German</option>
             <option>🇬🇧 English</option>
+            <option>🇩🇪 German</option>
             <option>🇪🇸 Spanish</option>
             <option>🇫🇷 French</option>
             <option>🇮🇳 Hindi</option>
+            <option>🇦🇪 Arabic</option>
             <option>🇮🇩 Indonesian</option>
             <option>🇮🇹 Italian</option>
             <option>🇯🇵 Japanese</option>

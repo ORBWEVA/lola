@@ -127,10 +127,10 @@ export class GeminiLiveAPI {
     this.responseModalities = ["AUDIO"];
     this.systemInstructions = "";
     this.googleGrounding = false;
-    this.enableAffectiveDialog = false; // Default affective dialog
+    this.enableAffectiveDialog = true; // Default affective dialog
     this.voiceName = "Puck"; // Default voice
     this.temperature = 1.0; // Default temperature
-    this.proactivity = { proactiveAudio: false }; // Proactivity config
+    this.proactivity = { proactiveAudio: true }; // Proactivity config
     this.inputAudioTranscription = false;
     this.outputAudioTranscription = false;
     this.enableFunctionCalls = false;
@@ -162,6 +162,7 @@ export class GeminiLiveAPI {
     };
 
     this.onErrorMessage = (message) => {
+      console.error("❌ [GeminiLiveAPI] Error:", message);
       alert(message);
       this.connected = false;
     };
@@ -228,30 +229,34 @@ export class GeminiLiveAPI {
     functionToCall.runFunction(parameters);
   }
 
-  async connect() {
+  async connect(token) {
     try {
       // 1. Authenticate
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ recaptcha_token: token }),
       });
 
       if (!response.ok) {
-        throw new Error("Authentication failed");
+        const error = new Error("Authentication failed");
+        error.status = response.status;
+        throw error;
       }
 
       const data = await response.json();
-      const token = data.session_token;
+      const sessionToken = data.session_token;
 
       // 2. Connect WebSocket
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws?token=${token}`;
+      const wsUrl = `${protocol}//${window.location.host}/ws?token=${sessionToken}`;
 
       this.setupWebSocketToService(wsUrl);
     } catch (error) {
       console.error("Connection error:", error);
-      this.onErrorMessage(error.message);
+      // Re-throw to allow caller to handle UI (e.g. 429 modal)
+      // Only call onErrorMessage for non-connection errors if needed, but here we expect caller to handle.
+      throw error;
     }
   }
 

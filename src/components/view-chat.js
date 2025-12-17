@@ -55,8 +55,20 @@ class ViewChat extends HTMLElement {
             <p style="font-size: 1rem; opacity: 0.9; margin-top: 4px;">${this._mission.desc}</p>
           </div>
           ${this._mode === 'immergo_teacher' ? `
-          <div style="margin-top: var(--spacing-lg); opacity: 0.8; font-size: 0.9rem; background: #e8f5e9; color: #2e7d32; padding: 8px 16px; border-radius: var(--radius-full); display: inline-flex; align-items: center; gap: 6px;">
-            <span>You can ask for <strong>translations</strong> & <strong>explanations</strong> in ${this._fromLanguage || 'your language'} at any time.</span>
+          <div style="
+            margin-top: var(--spacing-lg); 
+            font-size: 0.9rem; 
+            background: var(--color-surface); 
+            color: var(--color-accent-primary); 
+            padding: 8px 16px; 
+            border-radius: var(--radius-full); 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px;
+            border: 1px solid var(--color-accent-primary);
+            box-shadow: var(--shadow-sm);
+          ">
+            <span>You can ask for <strong>translations</strong> & <strong>explanations</strong> at any time.</span>
           </div>
           ` : ''}
         </div>
@@ -82,6 +94,14 @@ class ViewChat extends HTMLElement {
             <span style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Start Mission</span>
             <span style="font-size: 0.8rem; opacity: 0.9;">You start the conversation!</span>
           </button>
+
+           <p id="connection-status" style="
+             margin-top: var(--spacing-sm);
+             font-size: 0.9rem;
+             font-weight: bold;
+             height: 1.2em;
+             transition: all 0.3s ease;
+           "></p>
 
              <button id="end-btn" style="
             background: transparent;
@@ -126,6 +146,45 @@ class ViewChat extends HTMLElement {
                 </div>
             </div>
         </div>
+        <!-- Rate Limit Dialog -->
+        <div id="rate-limit-dialog" class="hidden" style="
+            position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        ">
+            <div style="background: white; color: var(--color-text-primary); padding: var(--spacing-xl); border-radius: var(--radius-lg); max-width: 500px; text-align: center; box-shadow: var(--shadow-lg);">
+                <h3 style="margin-bottom: var(--spacing-md); color: var(--color-accent-primary);">Oops, app is popular!</h3>
+                <p style="margin-bottom: var(--spacing-lg); line-height: 1.5;">
+                    Looks like this app is popular. Try again in a couple of minutes, or check out the GitHub to explore the code and build/deploy your own version.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                     <a href="https://github.com/ZackAkil/immersive-language-learning-with-live-api" target="_blank" style="
+                        background: var(--color-background);
+                        color: var(--color-text-primary);
+                        padding: var(--spacing-md);
+                        border-radius: var(--radius-md);
+                        text-decoration: none;
+                        font-weight: bold;
+                        border: 1px solid var(--color-text-sub);
+                        display: flex; align-items: center; justify-content: center; gap: 8px;
+                     ">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        View Source on GitHub
+                     </a>
+                </div>
+                <button id="close-rate-limit" style="
+                    background: var(--color-accent-primary);
+                    color: white;
+                    border: none;
+                    padding: var(--spacing-sm) var(--spacing-xl);
+                    border-radius: var(--radius-full);
+                    cursor: pointer;
+                    font-weight: bold;
+                ">Got it</button>
+            </div>
+        </div>
 
       </div>
     `;
@@ -146,6 +205,14 @@ class ViewChat extends HTMLElement {
         cancelEndBtn.addEventListener('click', () => {
             confirmDialog.classList.add('hidden');
             confirmDialog.style.display = 'none';
+        });
+
+        const rateLimitDialog = this.querySelector('#rate-limit-dialog');
+        const closeRateLimitBtn = this.querySelector('#close-rate-limit');
+
+        closeRateLimitBtn.addEventListener('click', () => {
+            rateLimitDialog.classList.add('hidden');
+            rateLimitDialog.style.display = 'none';
         });
 
         // Helper to perform navigation
@@ -173,6 +240,7 @@ class ViewChat extends HTMLElement {
         // Animate visualizer on click
         const viz = this.querySelector('audio-visualizer');
         const micBtn = this.querySelector('#mic-btn');
+        const statusEl = this.querySelector('#connection-status');
         let isSpeaking = false;
 
         // Initialize Gemini Live
@@ -205,6 +273,11 @@ class ViewChat extends HTMLElement {
         completeMissionTool.functionToCall = (args) => {
             console.log("🏆 [App] Mission Complete Tool Triggered!", args);
 
+            // Play winner sound immediately
+            const winnerSound = new Audio('/winner-bell.mp3');
+            winnerSound.volume = 0.6;
+            winnerSound.play().catch(e => console.error("Failed to play winner sound:", e));
+
             // Map score to level
             const levels = { 1: 'Tiro', 2: 'Proficiens', 3: 'Peritus' };
             const level = levels[args.score] || 'Proficiens';
@@ -229,7 +302,7 @@ class ViewChat extends HTMLElement {
                     bubbles: true,
                     detail: { view: 'summary', result: result }
                 }));
-            }, 5000); // 5 seconds delay
+            }, 4000); // 4 seconds delay
         };
 
         this.client.addFunction(completeMissionTool);
@@ -275,7 +348,7 @@ class ViewChat extends HTMLElement {
                 // Change to Stop/Listening state
                 micBtn.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                    <span style="margin-left: 8px;">Pause Session</span>
+                    <span style="margin-left: 8px;">Stop Session</span>
                 `;
                 micBtn.style.flexDirection = 'row';
             } else {
@@ -289,6 +362,8 @@ class ViewChat extends HTMLElement {
 
             if (isSpeaking) {
                 console.log("🎙️ [App] Microphone button clicked: Starting session...");
+                statusEl.textContent = "Connecting...";
+                statusEl.style.color = "var(--color-text-sub)";
                 viz.setActive(true);
 
                 try {
@@ -359,7 +434,25 @@ When the user has successfully achieved the mission objective declared in the sc
 
                     // 1. Connect to WebSocket
                     console.log("🔌 [App] Connecting to backend...");
-                    await this.client.connect();
+
+                    // Execute Recaptcha
+                    let token = '';
+                    try {
+                        token = await this.getRecaptchaToken();
+                        console.log("Captcha solved:", token);
+                    } catch (err) {
+                        console.error("Recaptcha failed:", err);
+                        // Start without token? Or fail? The server will reject it. 
+                        // Let's proceed and let server reject if needed, or stop.
+                        // For now, let's stop to be safe.
+                        isSpeaking = false;
+                        micBtn.style.background = 'var(--color-accent-primary)';
+                        viz.setActive(false);
+                        statusEl.textContent = "";
+                        return;
+                    }
+
+                    await this.client.connect(token);
 
                     // 2. Start Audio Stream
                     console.log("🎤 [App] Starting audio stream...");
@@ -370,17 +463,42 @@ When the user has successfully achieved the mission objective declared in the sc
                     await this.audioPlayer.init();
 
                     console.log("✨ [App] Session active!");
+                    statusEl.textContent = "Connected and ready to speak";
+                    statusEl.style.color = "#4CAF50"; // Success green
+
+                    // Play start sound
+                    const startSound = new Audio('/start-bell.mp3');
+                    startSound.volume = 0.6;
+                    startSound.play().catch(e => console.error("Failed to play start sound:", e));
 
                 } catch (err) {
                     console.error("❌ [App] Failed to start session:", err);
+                    console.log("Error status:", err.status); // Debug status
+
                     isSpeaking = false;
                     micBtn.style.background = 'var(--color-accent-primary)';
+                    // Reset button content to "Start Mission"
+                    micBtn.innerHTML = `
+                        <span style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Start Mission</span>
+                        <span style="font-size: 0.8rem; opacity: 0.9;">You start the conversation!</span>
+                    `;
+                    micBtn.style.flexDirection = 'column';
+
                     viz.setActive(false);
+                    statusEl.textContent = "";
+
+                    if (err.status === 429) {
+                        rateLimitDialog.classList.remove('hidden');
+                        rateLimitDialog.style.display = 'flex';
+                    } else {
+                        alert("Failed to start session: " + err.message);
+                    }
                 }
 
             } else {
                 console.log("🛑 [App] Microphone button clicked: Stopping session...");
                 viz.setActive(false);
+                statusEl.textContent = "";
 
                 // Stop everything
                 this.audioStreamer.stop();
@@ -388,6 +506,26 @@ When the user has successfully achieved the mission objective declared in the sc
                 // AudioPlayer doesn't strictly need stopping but good to know
                 console.log("👋 [App] Session ended");
             }
+        });
+    }
+
+    async getRecaptchaToken() {
+        return new Promise((resolve, reject) => {
+            if (typeof grecaptcha === 'undefined') {
+                reject(new Error("Recaptcha not loaded"));
+                return;
+            }
+            grecaptcha.enterprise.ready(async () => {
+                try {
+                    const t = await grecaptcha.enterprise.execute(
+                        "6LeSYx8sAAAAAGdRAp8VQ2K9I-KYGWBykzayvQ8n",
+                        { action: "LOGIN" }
+                    );
+                    resolve(t);
+                } catch (e) {
+                    reject(e);
+                }
+            });
         });
     }
 }
