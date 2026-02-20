@@ -80,12 +80,8 @@ class GeminiLive:
                 except (KeyError, IndexError, TypeError):
                     pass
             
-            if "proactivity" in setup_config:
-                try:
-                    proactive_audio = setup_config["proactivity"].get("proactiveAudio", False)
-                    config_args["proactivity"] = types.ProactivityConfig(proactive_audio=proactive_audio)
-                except (AttributeError, TypeError):
-                    pass
+            # Note: proactivity is NOT supported on native audio models — skip it
+            # if "proactivity" in setup_config: ...
 
             if "tools" in setup_config:
                 try:
@@ -110,12 +106,25 @@ class GeminiLive:
             if "input_audio_transcription" in setup_config:
                 print("💬 input_audio_transcription ENABLED")
                 config_args["input_audio_transcription"] = types.AudioTranscriptionConfig()
-            # Affective dialog
+            # Temperature from generation_config
+            # Note: enable_affective_dialog is NOT supported on native audio models
+            # and the SDK incorrectly nests it in generation_config on the wire, so skip it
             gen_config = setup_config.get("generation_config", {})
-            if gen_config.get("enable_affective_dialog"):
-                config_args["enable_affective_dialog"] = True
             if "temperature" in gen_config:
                 config_args["temperature"] = gen_config["temperature"]
+
+            # Realtime input config (activity detection)
+            if "realtime_input_config" in setup_config:
+                try:
+                    ric = setup_config["realtime_input_config"]
+                    aad = ric.get("automatic_activity_detection", {})
+                    config_args["realtime_input_config"] = types.RealtimeInputConfig(
+                        automatic_activity_detection=types.AutomaticActivityDetection(
+                            disabled=aad.get("disabled", False),
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"Error parsing realtime_input_config: {e}")
 
         config = types.LiveConnectConfig(**config_args)
         

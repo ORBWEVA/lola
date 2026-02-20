@@ -195,7 +195,7 @@ async def serve_spa(full_path: str):
 @app.post("/api/auth")
 @simpletrack("session_start")
 @limiter.limit(GLOBAL_RATE_LIMIT, key_func=get_global_key)
-@limiter.limit(PER_USER_RATE_LIMIT, key_func=get_fingerprint_key)
+@limiter.limit(PER_USER_RATE_LIMIT, key_func=get_global_key if DEV_MODE else get_fingerprint_key)
 async def authenticate(request: Request):
     """
     Validates ReCAPTCHA and issues a temporary session token for WebSocket connection.
