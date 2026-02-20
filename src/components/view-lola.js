@@ -9,7 +9,7 @@ import {
   GeminiLiveAPI,
   MultimodalLiveResponseType,
 } from "../lib/gemini-live/geminilive.js";
-import { AudioStreamer, VideoStreamer } from "../lib/gemini-live/mediaUtils.js";
+import { AudioStreamer, AudioPlayer, VideoStreamer } from "../lib/gemini-live/mediaUtils.js";
 import { TalkingHead } from "@met4citizen/talkinghead";
 
 class ViewLola extends HTMLElement {
@@ -221,11 +221,12 @@ class ViewLola extends HTMLElement {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
           this.handleAudio(response.data);
         } else if (response.type === MultimodalLiveResponseType.TURN_COMPLETE) {
-          if (this.head) this.head.streamNotifyEnd?.();
+          if (this.useAvatarAudio && this.head) this.head.streamNotifyEnd?.();
           const transcript = this.querySelector("live-transcript");
           if (transcript) transcript.finalizeAll();
         } else if (response.type === MultimodalLiveResponseType.INTERRUPTED) {
-          if (this.head) this.head.streamInterrupt?.();
+          if (this.useAvatarAudio && this.head) this.head.streamInterrupt?.();
+          if (this.audioPlayer) this.audioPlayer.interrupt();
         } else if (response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION) {
           const transcript = this.querySelector("live-transcript");
           if (transcript) transcript.addInputTranscript(response.data.text, response.data.finished);
@@ -261,9 +262,23 @@ class ViewLola extends HTMLElement {
         userViz.connect(this.audioStreamer.audioContext, this.audioStreamer.source);
       }
 
-      // Start TalkingHead streaming (24kHz to match Gemini output)
+      // Try TalkingHead streaming for audio playback + lip sync
+      this.useAvatarAudio = false;
       if (this.head) {
-        await this.head.streamStart({ sampleRate: 24000, waitForAudioChunks: true });
+        try {
+          await this.head.streamStart({ sampleRate: 24000, waitForAudioChunks: true });
+          this.useAvatarAudio = true;
+          console.log("TalkingHead streaming active");
+        } catch (e) {
+          console.warn("TalkingHead streaming failed, using AudioPlayer fallback:", e.message);
+        }
+      }
+
+      // Fallback: use AudioPlayer if TalkingHead streaming isn't available
+      if (!this.useAvatarAudio) {
+        this.audioPlayer = new AudioPlayer();
+        await this.audioPlayer.init();
+        console.log("AudioPlayer fallback active");
       }
 
       this.sessionActive = true;
@@ -279,13 +294,12 @@ class ViewLola extends HTMLElement {
   }
 
   handleAudio(data) {
-    if (this.head) {
+    if (this.useAvatarAudio && this.head) {
       // Feed PCM to TalkingHead for playback + lip sync
       let audioBuffer;
       if (data instanceof ArrayBuffer) {
         audioBuffer = data;
       } else if (typeof data === "string") {
-        // Base64 decode
         const binary = atob(data);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -294,6 +308,9 @@ class ViewLola extends HTMLElement {
       if (audioBuffer) {
         this.head.streamAudio({ audio: audioBuffer });
       }
+    } else if (this.audioPlayer) {
+      // Fallback: play through AudioPlayer
+      this.audioPlayer.play(data);
     }
   }
 
@@ -351,8 +368,12 @@ class ViewLola extends HTMLElement {
       this.client.disconnect();
       this.client = null;
     }
-    if (this.head) {
+    if (this.useAvatarAudio && this.head) {
       this.head.streamStop?.();
+    }
+    if (this.audioPlayer) {
+      this.audioPlayer.interrupt();
+      this.audioPlayer = null;
     }
 
     const userViz = this.querySelector("#user-viz");
