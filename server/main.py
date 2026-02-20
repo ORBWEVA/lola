@@ -32,7 +32,9 @@ from server.recaptcha_validator import RecaptchaValidator
 from server.gemini_live import GeminiLive
 from server.fingerprint import generate_fingerprint
 from server.simple_tracker import simpletrack
-from server.config_utils import get_project_id
+from server.config_utils import get_project_id, get_genai_client, get_model_name
+from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B
+from server.instruction_engine import generate_system_instruction, generate_context_update
 
 
 # Rate Limiting
@@ -53,7 +55,8 @@ logger = logging.getLogger(__name__)
 # Configuration
 PROJECT_ID = get_project_id()
 LOCATION = os.getenv("LOCATION", "us-central1")
-MODEL = os.getenv("MODEL", "gemini-live-2.5-flash-native-audio")
+MODEL = get_model_name()
+GENAI_CLIENT = get_genai_client()
 # Use a very long timeout for dev
 SESSION_TIME_LIMIT = int(os.getenv("SESSION_TIME_LIMIT", "180"))
 RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
@@ -147,6 +150,36 @@ async def get_status():
         "mode": mode,
         "missing": missing
     }
+
+@app.post("/api/profile")
+async def create_profile(request: Request):
+    """Generate a coaching profile from onboarding answers."""
+    data = await request.json()
+    l1 = data.get("l1", "ja")
+    answers = data.get("answers", {})
+    profile = generate_profile(l1, answers)
+    instruction = generate_system_instruction(profile)
+    return {"profile": profile, "system_instruction": instruction}
+
+
+@app.get("/api/demo-profiles")
+async def get_demo_profiles():
+    """Return pre-built demo profiles A and B with their system instructions."""
+    return {
+        "profile_a": {
+            "profile": PROFILE_A,
+            "system_instruction": generate_system_instruction(PROFILE_A),
+            "label": "The Analyst",
+            "description": "Analytical, structure-first, reflective pace",
+        },
+        "profile_b": {
+            "profile": PROFILE_B,
+            "system_instruction": generate_system_instruction(PROFILE_B),
+            "label": "The Explorer",
+            "description": "Social, action-oriented, flow pace",
+        },
+    }
+
 
 @app.get("/{full_path:path}")
 @simpletrack("page_view")
@@ -251,8 +284,7 @@ async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = None):
         pass
 
     gemini_client = GeminiLive(
-        project_id=PROJECT_ID,
-        location=LOCATION,
+        client=GENAI_CLIENT,
         model=MODEL,
         input_sample_rate=16000
     )

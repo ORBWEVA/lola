@@ -192,10 +192,18 @@ class ViewSplash extends HTMLElement {
           </div>
 
           <!-- CTA Section -->
-          <div style="margin-top: calc(var(--spacing-xxl) * 1.5); width: 100%; display: flex; justify-content: center;">
+          <div style="margin-top: calc(var(--spacing-xxl) * 1.5); width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px;">
             <button id="start-btn" class="mystic-btn">
               <text-cycler text="Start" values='${JSON.stringify(startTranslations).replace(/'/g, "&apos;").replace(/"/g, "&quot;")}'></text-cycler>
             </button>
+            <button id="lola-btn" style="
+              background: linear-gradient(135deg, #4A90D9, #D4A84B);
+              color: white; padding: 16px 40px; font-size: 1.1rem;
+              font-weight: 700; border: none; border-radius: 9999px;
+              cursor: pointer; transition: all 0.3s ease;
+              box-shadow: 0 4px 15px rgba(74,144,217,0.3);
+              letter-spacing: 0.02em;
+            ">LoLA Demo</button>
           </div>
 
         </div>
@@ -245,6 +253,19 @@ class ViewSplash extends HTMLElement {
       p.style.fontSize = `${0.8 + Math.random() * 1.5}rem`;
       host.appendChild(p);
     }
+
+    this.querySelector('#lola-btn').addEventListener('click', () => {
+      this.style.filter = 'blur(10px) brightness(1.2)';
+      this.style.opacity = '0';
+      this.style.transform = 'scale(1.05)';
+      this.style.transition = 'all 0.6s cubic-bezier(0.19, 1, 0.22, 1)';
+      setTimeout(() => {
+        this.dispatchEvent(new CustomEvent('navigate', {
+          bubbles: true,
+          detail: { view: 'lola' }
+        }));
+      }, 500);
+    });
 
     this.querySelector('#start-btn').addEventListener('click', () => {
       // Transition Effect

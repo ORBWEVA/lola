@@ -24,19 +24,11 @@ from typing import Optional, List, Dict, Callable
 logger = logging.getLogger(__name__)
 
 class GeminiLive:
-    def __init__(self, project_id: str, location: str, model: str, input_sample_rate: int = 16000):
-        self.project_id = project_id
-        self.location = location
+    def __init__(self, client, model: str, input_sample_rate: int = 16000):
+        self.client = client
         self.model = model
         self.input_sample_rate = input_sample_rate
-        print("🚀 GeminiLive initialized with:")
-        print(f"  Project ID: {project_id}")
-        print(f"  Location: {location}")
-        print(f"  Model: {model}")
-        print(f"  Input Sample Rate: {input_sample_rate}")
-        
-        # Initialize client
-        self.client = genai.Client(vertexai=True, project=project_id, location=location)
+        print(f"GeminiLive initialized with model={model}, rate={input_sample_rate}")
         self.tool_mapping = {}
 
     def register_tool(self, func: Callable):
@@ -110,13 +102,20 @@ class GeminiLive:
                 except Exception as e:
                     logger.warning(f"Error parsing tools config: {e}")
 
-        # Config output transcription
-        if "output_audio_transcription" in setup_config:
-            print("💬 output_audio_transcription ENABLED")
-            config_args["output_audio_transcription"] = types.AudioTranscriptionConfig()
-        if "input_audio_transcription" in setup_config:
-            print("💬 input_audio_transcription ENABLED")
-            config_args["input_audio_transcription"] = types.AudioTranscriptionConfig()
+        # Config transcription (must be inside setup_config check)
+        if setup_config:
+            if "output_audio_transcription" in setup_config:
+                print("💬 output_audio_transcription ENABLED")
+                config_args["output_audio_transcription"] = types.AudioTranscriptionConfig()
+            if "input_audio_transcription" in setup_config:
+                print("💬 input_audio_transcription ENABLED")
+                config_args["input_audio_transcription"] = types.AudioTranscriptionConfig()
+            # Affective dialog
+            gen_config = setup_config.get("generation_config", {})
+            if gen_config.get("enable_affective_dialog"):
+                config_args["enable_affective_dialog"] = True
+            if "temperature" in gen_config:
+                config_args["temperature"] = gen_config["temperature"]
 
         config = types.LiveConnectConfig(**config_args)
         

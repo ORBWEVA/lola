@@ -18,6 +18,7 @@ import './view-splash.js';
 import './view-missions.js';
 import './view-chat.js';
 import './view-summary.js';
+import './view-lola.js';
 import './text-cycler.js';
 
 class AppRoot extends HTMLElement {
@@ -264,6 +265,9 @@ class AppRoot extends HTMLElement {
                 currentView.language = this.state.selectedLanguage;
                 currentView.fromLanguage = this.state.selectedFromLanguage;
                 currentView.mode = this.state.selectedMode;
+                break;
+            case 'lola':
+                currentView = document.createElement('view-lola');
                 break;
             case 'summary':
                 currentView = document.createElement('view-summary');

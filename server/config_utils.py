@@ -14,21 +14,19 @@
 
 import os
 import logging
-import google.auth
+import google.genai as genai
 
 logger = logging.getLogger(__name__)
 
+
 def get_project_id():
-    """
-    Get the project ID from the environment or Google Cloud default credentials.
-    """
-    # 1. Try Environment Variable
+    """Get the project ID from env or Google Cloud default credentials."""
     env_project_id = os.getenv("PROJECT_ID")
     if env_project_id and env_project_id != "your-project-id":
         return env_project_id
 
-    # 2. Try Google Auth (Standard way for Cloud Run/GCE/Local ADC)
     try:
+        import google.auth
         _, auth_project_id = google.auth.default()
         if auth_project_id:
             logger.info(f"Fetched PROJECT_ID from Google Auth: {auth_project_id}")
@@ -36,5 +34,36 @@ def get_project_id():
     except Exception as e:
         logger.warning(f"Could not determine PROJECT_ID from Google Auth: {e}")
 
-    # 3. Fallback
     return "your-project-id"
+
+
+def get_genai_client():
+    """
+    Create a google-genai client.
+    Prefers API key mode (GEMINI_API_KEY) for simplicity.
+    Falls back to Vertex AI mode (PROJECT_ID + LOCATION) for Cloud Run.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        logger.info("Using Google AI Studio (API key) mode")
+        return genai.Client(api_key=api_key)
+
+    project_id = get_project_id()
+    location = os.getenv("LOCATION", "us-central1")
+    logger.info(f"Using Vertex AI mode (project={project_id}, location={location})")
+    return genai.Client(vertexai=True, project=project_id, location=location)
+
+
+def get_model_name():
+    """
+    Get the model name. API key mode and Vertex AI mode use different names.
+    """
+    model = os.getenv("MODEL")
+    if model:
+        return model
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        return "gemini-2.5-flash-native-audio-preview-12-2025"
+
+    return "gemini-live-2.5-flash-native-audio"
