@@ -1,6 +1,8 @@
 JA_PATTERNS = {
     "language_name": "Japanese",
     "language_native": "日本語",
+    "target_language": "English",
+    "target_native": "English",
     "interference_patterns": [
         "Missing articles (a/the) — Japanese has no equivalent",
         "Tense errors — Japanese uses 〜した for past, not verb conjugation",

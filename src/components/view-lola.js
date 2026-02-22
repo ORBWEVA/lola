@@ -12,6 +12,7 @@ import {
 import { AudioStreamer, AudioPlayer, VideoStreamer } from "../lib/gemini-live/mediaUtils.js";
 import { TalkingHead } from "@met4citizen/talkinghead";
 
+
 class ViewLola extends HTMLElement {
   constructor() {
     super();
@@ -30,7 +31,7 @@ class ViewLola extends HTMLElement {
     if (this.audioStreamer) this.audioStreamer.stop();
     if (this.videoStreamer) this.videoStreamer.stop();
     if (this.client) this.client.disconnect();
-    if (this.head) this.head.streamStop?.();
+    if (this.head) this.head.isSpeaking = false;
   }
 
   async showProfilePicker() {
@@ -72,9 +73,13 @@ class ViewLola extends HTMLElement {
     const profiles = [
       { key: "profile_a", ...data.profile_a, color: "#4A90D9" },
       { key: "profile_b", ...data.profile_b, color: "#D4A84B" },
+      { key: "profile_c", ...data.profile_c, color: "#E85D75" },
+      { key: "profile_d", ...data.profile_d, color: "#50C878" },
     ];
 
     profiles.forEach((p) => {
+      const l1 = p.profile?.l1 === "en" ? "English" : p.profile?.l1 === "ko" ? "Korean" : "Japanese";
+      const target = p.profile?.l1 === "en" ? "Japanese" : "English";
       const card = document.createElement("button");
       card.style.cssText = `
         background: var(--color-surface); border: 2px solid ${p.color}33;
@@ -83,10 +88,9 @@ class ViewLola extends HTMLElement {
         transition: all 0.3s ease; box-shadow: var(--shadow-sm);
       `;
       card.innerHTML = `
-        <div style="font-size: 0.75rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Profile ${p.key === "profile_a" ? "A" : "B"}</div>
-        <div style="font-size: 1.3rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 6px;">${p.label}</div>
+        <div style="font-size: 0.75rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">${p.label}</div>
         <div style="font-size: 0.9rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
-        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-sub); opacity: 0.7;">L1: Japanese</div>
+        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-sub); opacity: 0.7;">${l1} → ${target}</div>
       `;
       card.addEventListener("mouseenter", () => { card.style.borderColor = p.color; card.style.transform = "translateY(-3px)"; });
       card.addEventListener("mouseleave", () => { card.style.borderColor = p.color + "33"; card.style.transform = "translateY(0)"; });
@@ -166,12 +170,23 @@ class ViewLola extends HTMLElement {
     try {
       this.head = new TalkingHead(container, {
         lipsyncModules: ["en"],
-        cameraView: "upper",
+        cameraView: "head",
+        cameraDistance: 0.1,
+        cameraY: 0,
+        lightAmbientIntensity: 2.5,
+        lightDirectIntensity: 15,
+        lightDirectPhi: 0.5,
+        lightDirectTheta: 2,
+        modelPixelRatio: window.devicePixelRatio || 1,
+        modelFPS: 30,
+        avatarIdleEyeContact: 0.6,
+        avatarSpeakingEyeContact: 0.7,
+        avatarSpeakingHeadMove: 0.4,
       });
 
-      const avatarUrl = "https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes";
+      const avatarUrl = "https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes&quality=high&textureAtlas=1024";
       await this.head.showAvatar(
-        { url: avatarUrl, body: "F", avatarMood: "neutral", lipsyncLang: "en" },
+        { url: avatarUrl, body: "F", avatarMood: "happy", lipsyncLang: "en" },
         (ev) => {
           if (ev.lengthComputable) {
             const pct = Math.round((ev.loaded / ev.total) * 100);
@@ -214,18 +229,18 @@ class ViewLola extends HTMLElement {
       this.client.setSystemInstructions(this._systemInstruction);
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
-      this.client.setVoice("Puck");
+      this.client.setVoice("Kore");
 
       // Handle responses
       this.client.onReceiveResponse = (response) => {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
           this.handleAudio(response.data);
         } else if (response.type === MultimodalLiveResponseType.TURN_COMPLETE) {
-          if (this.useAvatarAudio && this.head) this.head.streamNotifyEnd?.();
+          if (this.head) this.head.isSpeaking = false;
           const transcript = this.querySelector("live-transcript");
           if (transcript) transcript.finalizeAll();
         } else if (response.type === MultimodalLiveResponseType.INTERRUPTED) {
-          if (this.useAvatarAudio && this.head) this.head.streamInterrupt?.();
+          if (this.head) this.head.isSpeaking = false;
           if (this.audioPlayer) this.audioPlayer.interrupt();
         } else if (response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION) {
           const transcript = this.querySelector("live-transcript");
@@ -262,24 +277,22 @@ class ViewLola extends HTMLElement {
         userViz.connect(this.audioStreamer.audioContext, this.audioStreamer.source);
       }
 
-      // Try TalkingHead streaming for audio playback + lip sync
-      this.useAvatarAudio = false;
-      if (this.head) {
-        try {
-          await this.head.streamStart({ sampleRate: 24000, waitForAudioChunks: true });
-          this.useAvatarAudio = true;
-          console.log("TalkingHead streaming active");
-        } catch (e) {
-          console.warn("TalkingHead streaming failed, using AudioPlayer fallback:", e.message);
-        }
-      }
+      // Audio playback via AudioPlayer (reliable).
+      this.audioPlayer = new AudioPlayer();
+      await this.audioPlayer.init();
 
-      // Fallback: use AudioPlayer if TalkingHead streaming isn't available
-      if (!this.useAvatarAudio) {
-        this.audioPlayer = new AudioPlayer();
-        await this.audioPlayer.init();
-        console.log("AudioPlayer fallback active");
-      }
+      // Tap into audio output with AnalyserNode for real-time lip sync
+      this.analyser = this.audioPlayer.audioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.analyser.smoothingTimeConstant = 0.4;
+      this._analyserData = new Uint8Array(this.analyser.frequencyBinCount);
+      // Reroute: worklet → gain → analyser → destination
+      this.audioPlayer.gainNode.disconnect();
+      this.audioPlayer.gainNode.connect(this.analyser);
+      this.analyser.connect(this.audioPlayer.audioContext.destination);
+
+      // Start lip sync loop — reads actual playback volume via AnalyserNode
+      this.startLipSyncLoop();
 
       this.sessionActive = true;
       status.textContent = "Connected — speak to LoLA";
@@ -294,24 +307,54 @@ class ViewLola extends HTMLElement {
   }
 
   handleAudio(data) {
-    if (this.useAvatarAudio && this.head) {
-      // Feed PCM to TalkingHead for playback + lip sync
-      let audioBuffer;
-      if (data instanceof ArrayBuffer) {
-        audioBuffer = data;
-      } else if (typeof data === "string") {
-        const binary = atob(data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        audioBuffer = bytes.buffer;
-      }
-      if (audioBuffer) {
-        this.head.streamAudio({ audio: audioBuffer });
-      }
-    } else if (this.audioPlayer) {
-      // Fallback: play through AudioPlayer
+    if (this.audioPlayer) {
       this.audioPlayer.play(data);
     }
+  }
+
+  startLipSyncLoop() {
+    if (this._lipSyncRunning) return;
+    this._lipSyncRunning = true;
+
+    const animate = () => {
+      if (!this._lipSyncRunning) return;
+
+      // Read actual playback volume from AnalyserNode
+      let vol = 0;
+      if (this.analyser && this._analyserData) {
+        this.analyser.getByteFrequencyData(this._analyserData);
+        // Average low-mid frequencies (voice range ~80-3000Hz)
+        let sum = 0;
+        const bins = Math.min(32, this._analyserData.length);
+        for (let i = 1; i < bins; i++) sum += this._analyserData[i];
+        vol = sum / (bins - 1) / 255; // Normalize to 0-1
+      }
+
+      const mt = this.head?.mtAvatar;
+      if (mt && vol > 0.02) {
+        this.head.isSpeaking = true;
+        // Map volume to viseme morph targets with needsUpdate flag
+        if (mt["viseme_aa"]) { mt["viseme_aa"].newvalue = vol * 0.8; mt["viseme_aa"].needsUpdate = true; }
+        if (mt["viseme_O"]) { mt["viseme_O"].newvalue = vol * 0.4; mt["viseme_O"].needsUpdate = true; }
+        if (mt["viseme_I"]) { mt["viseme_I"].newvalue = vol * 0.2; mt["viseme_I"].needsUpdate = true; }
+        if (mt["jawOpen"]) { mt["jawOpen"].newvalue = vol * 0.6; mt["jawOpen"].needsUpdate = true; }
+      } else if (mt) {
+        // Silence — close mouth
+        if (mt["viseme_aa"]) { mt["viseme_aa"].newvalue = 0; mt["viseme_aa"].needsUpdate = true; }
+        if (mt["viseme_O"]) { mt["viseme_O"].newvalue = 0; mt["viseme_O"].needsUpdate = true; }
+        if (mt["viseme_I"]) { mt["viseme_I"].newvalue = 0; mt["viseme_I"].needsUpdate = true; }
+        if (mt["jawOpen"]) { mt["jawOpen"].newvalue = 0; mt["jawOpen"].needsUpdate = true; }
+      }
+
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
+  stopLipSyncLoop() {
+    this._lipSyncRunning = false;
+    this.analyser = null;
+    this._analyserData = null;
   }
 
   async toggleCamera() {
@@ -368,8 +411,9 @@ class ViewLola extends HTMLElement {
       this.client.disconnect();
       this.client = null;
     }
-    if (this.useAvatarAudio && this.head) {
-      this.head.streamStop?.();
+    this.stopLipSyncLoop();
+    if (this.head) {
+      this.head.isSpeaking = false;
     }
     if (this.audioPlayer) {
       this.audioPlayer.interrupt();

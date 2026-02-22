@@ -139,10 +139,10 @@ export class GeminiLiveAPI {
     this.responseModalities = ["AUDIO"];
     this.systemInstructions = "";
     this.googleGrounding = false;
-    this.enableAffectiveDialog = true; // Default affective dialog
+    this.enableAffectiveDialog = false; // Not supported on native audio models
     this.voiceName = "Puck"; // Default voice
-    this.temperature = 1.0; // Default temperature
-    this.proactivity = { proactiveAudio: true }; // Proactivity config
+    this.temperature = 0.7; // Lower for consistent instruction-following
+    this.proactivity = null; // Not supported on native audio models
     this.inputAudioTranscription = false;
     this.outputAudioTranscription = false;
     this.enableFunctionCalls = false;
@@ -367,7 +367,6 @@ export class GeminiLiveAPI {
         },
         system_instruction: { parts: [{ text: this.systemInstructions }] },
         tools: { function_declarations: tools },
-        proactivity: this.proactivity,
 
         realtime_input_config: {
           automatic_activity_detection: this.automaticActivityDetection,
@@ -392,10 +391,7 @@ export class GeminiLiveAPI {
       delete sessionSetupMessage.setup.tools.function_declarations;
     }
 
-    // Add affective dialog if enabled
-    if (this.enableAffectiveDialog) {
-      sessionSetupMessage.setup.generation_config.enable_affective_dialog = true;
-    }
+    // Note: enable_affective_dialog is NOT supported on native audio models — skip it
 
     // Store the setup message for later access
     this.lastSetupMessage = sessionSetupMessage;

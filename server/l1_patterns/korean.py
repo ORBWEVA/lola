@@ -1,6 +1,8 @@
 KO_PATTERNS = {
     "language_name": "Korean",
     "language_native": "한국어",
+    "target_language": "English",
+    "target_native": "English",
     "interference_patterns": [
         "Missing articles (a/the) — Korean has no equivalent",
         "Tense errors — Korean uses verb endings (했다 for past) rather than English-style conjugation",

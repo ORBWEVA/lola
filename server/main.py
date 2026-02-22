@@ -33,7 +33,7 @@ from server.gemini_live import GeminiLive
 from server.fingerprint import generate_fingerprint
 from server.simple_tracker import simpletrack
 from server.config_utils import get_project_id, get_genai_client, get_model_name
-from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B
+from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D
 from server.instruction_engine import generate_system_instruction, generate_context_update
 
 
@@ -164,19 +164,31 @@ async def create_profile(request: Request):
 
 @app.get("/api/demo-profiles")
 async def get_demo_profiles():
-    """Return pre-built demo profiles A and B with their system instructions."""
+    """Return pre-built demo profiles with their system instructions."""
     return {
         "profile_a": {
             "profile": PROFILE_A,
             "system_instruction": generate_system_instruction(PROFILE_A),
             "label": "The Analyst",
-            "description": "Analytical, structure-first, reflective pace",
+            "description": "Japanese speaker learning English — analytical, structure-first",
         },
         "profile_b": {
             "profile": PROFILE_B,
             "system_instruction": generate_system_instruction(PROFILE_B),
             "label": "The Explorer",
-            "description": "Social, action-oriented, flow pace",
+            "description": "Japanese speaker learning English — social, action-oriented",
+        },
+        "profile_c": {
+            "profile": PROFILE_C,
+            "system_instruction": generate_system_instruction(PROFILE_C),
+            "label": "JP Beginner (Analyst)",
+            "description": "English speaker learning Japanese — analytical, structured",
+        },
+        "profile_d": {
+            "profile": PROFILE_D,
+            "system_instruction": generate_system_instruction(PROFILE_D),
+            "label": "JP Beginner (Explorer)",
+            "description": "English speaker learning Japanese — immersive, action-paced",
         },
     }
 

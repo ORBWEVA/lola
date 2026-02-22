@@ -57,3 +57,22 @@ PROFILE_B = {
     "pacing": "action",
     "instruction_depth": "flow_first",
 }
+
+# English speakers learning Japanese
+PROFILE_C = {
+    "l1": "en",
+    "error_response": "analytical",
+    "learning_preference": "structure_first",
+    "motivation_driver": "metrics",
+    "pacing": "reflective",
+    "instruction_depth": "depth_first",
+}
+
+PROFILE_D = {
+    "l1": "en",
+    "error_response": "challenge_forward",
+    "learning_preference": "experience_first",
+    "motivation_driver": "application",
+    "pacing": "action",
+    "instruction_depth": "flow_first",
+}
