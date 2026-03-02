@@ -547,7 +547,7 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | 3D avatar with TalkingHead | DONE | Ready Player Me avatar, idle animations, gestures |
 | Avatar lip sync (AnalyserNode) | DONE | Real-time volume → viseme blend shapes. Mouth moves but sync quality needs polish. |
 | Demo profile picker (4 cards) | DONE | Card-based UI with language direction labels |
-| Camera/vision input to Gemini | Partial | Backend supports it; frontend camera capture not fully wired |
+| Camera/vision input to Gemini | DONE | VideoStreamer sends JPEG frames at 1fps via WebSocket; PiP camera preview in session view |
 | 5-question onboarding UI (L1 selection + questions) | NOT STARTED | Currently using pre-built demo profile picker |
 | Split-screen demo view (dual sessions) | NOT STARTED | Single session only |
 | Educator dashboard mock | NOT STARTED | |
