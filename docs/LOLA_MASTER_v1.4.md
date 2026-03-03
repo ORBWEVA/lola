@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v1.3 — 2026-03-04)
+# LoLA — Loka Learning Avatar Master Reference (v1.4 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 1.4 | 2026-03-04T14:00:00Z | Claude Code (Opus 4.6) | Rebranded UI to LoLA Brand Guide v1 design system. Replaced Immergo "Mystic Archive" theme (sage green #a3b18a, paper textures, Libre Baskerville + Nunito) with LoLA brand identity: indigo #4361ee / rose #ff4d6d / sky #4cc9f0 on dark blue-black #0a0a1a, Exo 2 + Space Mono + Noto Sans JP fonts. Removed light mode toggle (dark-only per brand guide). Updated all 7 frontend files. Added design system reference to §5. |
 | 1.3 | 2026-03-04T12:00:00Z | Claude Code (Opus 4.6) | Completed hackathon build: 5-question onboarding UI, split-screen dual-session demo, Cloud Run deployment (deploy.sh + cloudbuild.yaml), expression carousel with waveform visualizer (replaced TalkingHead 3D avatar), avatar image generation pipeline (FLUX Schnell + Kontext Pro), README with Mermaid architecture diagram. |
 | 1.2 | 2026-02-22T14:30:00Z | Claude Code (Opus 4.6) | Updated to reflect actual built state after Phase 1 build sessions. Tech stack updated: Gemini 2.5 Flash Native Audio (not GPT-4o), TalkingHead with AnalyserNode lip sync (not HeadAudio), Kore voice. Added §5 actual project structure matching `server/` + `src/` layout. Updated §4 with 4 demo profiles (A/B/C/D), both-direction language support (EN→JA added), 3 L1 pattern files. Documented actual API architecture: FastAPI WebSocket proxy, API key mode, session token auth. Added implementation status tracking to §7. |
 | 1.1 | 2026-02-20T15:00:00Z | Claude.ai (Opus 4.6) | Added §4 Academic Foundations subsection with principle-by-principle source mapping (Dweck, Sweller, Immordino-Yang, Roediger, Flavell, Hammond, Bandler & Grinder, Paling). Created companion doc `LOLA_12_PRINCIPLE_ACADEMIC_FOUNDATIONS.md` with full ISBNs, research findings, and hackathon/investor Q&A guidance. |
@@ -477,6 +478,7 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | **LLM** | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) | Speech-to-speech coaching via Live API — no separate STT/TTS needed |
 | **Backend** | Python 3.10+ / FastAPI / `google-genai` SDK | WebSocket proxy between browser and Gemini Live API |
 | **Frontend** | Vanilla JS / Vite / Web Components / Web Audio API | Voice chat interface, profile picker, avatar rendering |
+| **Design System** | LoLA Brand Guide v1 (Exo 2 + Space Mono + Noto Sans JP, dark-only) | Indigo/rose/sky color palette on #0a0a1a — see `docs/LOLA_BRAND_GUIDE_v1.md` |
 | **Avatar** | Pre-rendered FLUX expressions (8 per profile) | Expression carousel with keyword-based detection from output transcription |
 | **Avatar Generation** | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI | `scripts/generate-expressions.js` — automated pipeline for character-consistent expression images |
 | **Audio Visualization** | AnalyserNode (Web Audio API) | Guitar-string waveform visualizer — shows activity even when session is muted |
