@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v1.6 — 2026-03-04)
+# LoLA — Loka Learning Avatar Master Reference (v1.7 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 1.7 | 2026-03-04T23:30:00Z | Claude Code (Opus 4.6) | Added Remotion demo video scaffold at `video/`. 8 compositions: branded intro/outro, problem statement, architecture overlay with animated callouts, multi-domain vision montage, 3 screen capture placeholders with narration markers and lower-third overlays. Uses LoLA Brand Guide tokens (Exo 2 + Space Mono fonts, indigo/rose/sky palette). Total 6450 frames = 3:35 @ 30fps, under 4:00 limit. Ryno records screen captures separately. |
 | 1.6 | 2026-03-04T22:30:00Z | Claude Code (Opus 4.6) | Added branded architecture diagram for Devpost submission (`docs/architecture-diagram.html` → `docs/lola-architecture.png`). Three-tier layout (Browser → Cloud Run → Gemini) at 1600x900, LoLA brand colors, Playwright screenshot. Updated §7 milestone table. |
 | 1.5 | 2026-03-04T16:00:00Z | Claude Code (Opus 4.6) | Landing page hero redesign: split layout (text left, phone mockup right on desktop; stacked on mobile), CSS phone mockup with avatar image + glass speech bubble + waveform decoration + ambient glow animations. Avatar image generation pipeline updated (FLUX.1-schnell replaced deprecated schnell-Free, editorial-quality prompts). Demo profile cards now show circular avatar faces. Hidden reCAPTCHA badge. Equal-width CTA buttons. |
 | 1.4 | 2026-03-04T14:00:00Z | Claude Code (Opus 4.6) | Rebranded UI to LoLA Brand Guide v1 design system. Replaced Immergo "Mystic Archive" theme (sage green #a3b18a, paper textures, Libre Baskerville + Nunito) with LoLA brand identity: indigo #4361ee / rose #ff4d6d / sky #4cc9f0 on dark blue-black #0a0a1a, Exo 2 + Space Mono + Noto Sans JP fonts. Removed light mode toggle (dark-only per brand guide). Updated all 7 frontend files. Added design system reference to §5. |
@@ -561,7 +562,8 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | Cloud Run deployment | DONE | `scripts/deploy.sh` (one-command) + `cloudbuild.yaml` (CI/CD). Multi-stage Dockerfile. |
 | README + architecture diagram | DONE | Mermaid diagram in README + branded PNG (`docs/lola-architecture.png`, 1600x900) for Devpost upload. Source: `docs/architecture-diagram.html`. |
 | Educator dashboard mock | NOT STARTED | |
-| Demo video recording | NOT STARTED | |
+| Demo video — Remotion scaffold | DONE | `video/` — Remotion 4.0 project. Branded intro/outro, problem, architecture, multi-domain, close sequences. 3 screen capture placeholders. |
+| Demo video — screen recordings | NOT STARTED | Onboarding (25s), split-screen coaching (70s), vision demo (30s). Record at 1920x1080 → `video/public/captures/`. |
 
 ### Q1 2026 (Post-Hackathon)
 
