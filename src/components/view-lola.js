@@ -751,27 +751,24 @@ class ViewLola extends HTMLElement {
             align-items: center;
             text-align: center;
           }
-          .landing-btns { align-items: center; }
+          .landing-btns { align-items: stretch; width: 100%; max-width: 320px; }
           .phone {
-            width: 180px;
-            height: 390px;
-            border-radius: 36px;
+            width: 260px;
+            height: 563px;
+            border-radius: 40px;
           }
-          .phone-screen { border-radius: 36px; }
-          .phone-overlay { border-radius: 36px; }
+          .phone-screen { border-radius: 40px; }
+          .phone-overlay { border-radius: 40px; }
           .phone-notch {
-            width: 68px;
-            height: 20px;
-            top: 10px;
+            width: 76px;
+            height: 22px;
+            top: 11px;
           }
           .phone-bubble {
-            bottom: 30px;
-            left: 10px;
-            right: 10px;
-            padding: 10px 12px;
-            border-radius: 12px;
+            bottom: 32px;
+            left: 12px;
+            right: 12px;
           }
-          .phone-bubble-text { font-size: 0.65rem; }
           .hero-glow {
             width: 280px;
             height: 280px;
