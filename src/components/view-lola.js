@@ -489,8 +489,9 @@ class ViewLola extends HTMLElement {
           display: flex;
           flex-direction: column;
           gap: 14px;
-          align-items: flex-start;
+          align-items: stretch;
           margin-top: 24px;
+          width: 280px;
         }
         .landing-cta {
           position: relative;

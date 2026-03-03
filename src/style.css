@@ -213,3 +213,8 @@ button {
 .fade-in {
   animation: fadeIn 0.7s ease-out forwards;
 }
+
+/* Hide reCAPTCHA badge — required by Google ToS to include text attribution instead */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
