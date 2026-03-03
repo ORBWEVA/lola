@@ -23,7 +23,7 @@ const AVATARS_DIR = path.join(ROOT, "public", "avatars");
 
 const API_KEY = process.env.TOGETHER_API_KEY;
 const API_URL = "https://api.together.xyz/v1/images/generations";
-const SCHNELL_MODEL = "black-forest-labs/FLUX.1-schnell-Free";
+const SCHNELL_MODEL = "black-forest-labs/FLUX.1-schnell";
 const KONTEXT_MODEL = "black-forest-labs/FLUX.1-kontext-pro";
 
 if (!API_KEY) {

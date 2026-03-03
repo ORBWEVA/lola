@@ -417,6 +417,27 @@ class ViewLola extends HTMLElement {
     this.innerHTML = `
       <style>
         ${SHARED_STYLES}
+
+        /* ─── Hero Layout ─────────────────────────────────────── */
+        .hero {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 64px;
+          min-height: 100vh;
+          padding: 40px 24px;
+          position: relative;
+          overflow: hidden;
+        }
+        .hero-text {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-width: 420px;
+          z-index: 10;
+        }
+
+        /* ─── Typography ──────────────────────────────────────── */
         .landing-title {
           font-family: var(--font-display, 'Exo 2', system-ui, sans-serif);
           font-weight: 700;
@@ -425,10 +446,6 @@ class ViewLola extends HTMLElement {
           background: var(--lola-gradient, linear-gradient(135deg, #4361ee 0%, #4cc9f0 100%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          position: relative;
-          z-index: 10;
-          text-align: center;
-          margin-bottom: 8px;
           line-height: 1.1;
         }
         .landing-byline {
@@ -436,33 +453,24 @@ class ViewLola extends HTMLElement {
           font-weight: 300;
           font-size: 0.9rem;
           color: var(--lola-text-secondary, #9595b0);
-          text-align: center;
-          position: relative;
-          z-index: 10;
           letter-spacing: 0.5px;
         }
         .landing-tagline {
           font-family: var(--font-body, 'Exo 2', system-ui, sans-serif);
           font-weight: 300;
-          font-size: clamp(1rem, 3vw, 1.3rem);
+          font-size: clamp(1rem, 3vw, 1.25rem);
           color: var(--lola-text-secondary, #9595b0);
-          text-align: center;
-          max-width: 500px;
           line-height: 1.6;
-          position: relative;
-          z-index: 10;
+          margin-top: 4px;
         }
         .landing-powered {
           font-family: var(--font-mono, 'Space Mono', monospace);
-          font-size: 0.7rem;
+          font-size: 0.65rem;
           text-transform: uppercase;
           letter-spacing: 2px;
           opacity: 0.5;
           color: var(--lola-text-secondary, #9595b0);
-          text-align: center;
           line-height: 1.8;
-          position: relative;
-          z-index: 10;
           margin-top: 8px;
         }
         .landing-powered a {
@@ -475,9 +483,17 @@ class ViewLola extends HTMLElement {
         .landing-powered a:hover {
           border-bottom-color: var(--lola-indigo, #4361ee);
         }
+
+        /* ─── Buttons ─────────────────────────────────────────── */
+        .landing-btns {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          align-items: flex-start;
+          margin-top: 24px;
+        }
         .landing-cta {
           position: relative;
-          z-index: 20;
           background: var(--lola-rose, #ff4d6d);
           color: #ffffff;
           padding: 16px 48px;
@@ -508,8 +524,6 @@ class ViewLola extends HTMLElement {
           transform: translateX(150%) skewX(-15deg);
         }
         .landing-secondary {
-          position: relative;
-          z-index: 20;
           background: transparent;
           border: 1px solid var(--lola-surface-3, #22224a);
           color: var(--lola-text-secondary, #9595b0);
@@ -526,8 +540,6 @@ class ViewLola extends HTMLElement {
           transform: translateY(-2px);
         }
         .landing-split {
-          position: relative;
-          z-index: 20;
           background: var(--lola-indigo, #4361ee);
           color: white;
           padding: 12px 32px;
@@ -544,9 +556,234 @@ class ViewLola extends HTMLElement {
           background: var(--lola-indigo-hover, #5271ff);
           box-shadow: var(--shadow-md);
         }
+
+        /* ─── Phone Mockup ────────────────────────────────────── */
+        .hero-phone-area {
+          position: relative;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 24px;
+        }
+        .phone {
+          position: relative;
+          width: 220px;
+          height: 476px;
+          border-radius: 42px;
+          background: #0c0c1e;
+          overflow: hidden;
+          transform: rotate(-1.5deg);
+          box-shadow:
+            0 0 0 2px #1a1a2e,
+            0 20px 60px rgba(0, 0, 0, 0.6),
+            0 0 80px rgba(67, 97, 238, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+          animation: phone-float 4s ease-in-out infinite;
+        }
+        .phone-screen {
+          position: absolute;
+          inset: 0;
+          border-radius: 42px;
+          overflow: hidden;
+        }
+        .phone-avatar {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center top;
+          display: block;
+        }
+        .phone-avatar-fallback {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(180deg, #12122a 0%, #1a1a3a 50%, #0c0c1e 100%);
+        }
+        .phone-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(10, 10, 26, 0.5) 0%,
+            transparent 20%,
+            transparent 55%,
+            rgba(10, 10, 26, 0.75) 100%
+          );
+          pointer-events: none;
+          border-radius: 42px;
+        }
+
+        /* Dynamic Island */
+        .phone-notch {
+          position: absolute;
+          top: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80px;
+          height: 24px;
+          background: #000;
+          border-radius: 12px;
+          z-index: 3;
+        }
+        .phone-notch::after {
+          content: '';
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #1a1a3e;
+          box-shadow: inset 0 0 2px rgba(76, 201, 240, 0.3);
+        }
+
+        /* Home indicator */
+        .phone-home {
+          position: absolute;
+          bottom: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100px;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.25);
+          border-radius: 2px;
+          z-index: 3;
+        }
+
+        /* Speech bubble */
+        .phone-bubble {
+          position: absolute;
+          bottom: 36px;
+          left: 12px;
+          right: 12px;
+          z-index: 4;
+          background: var(--lola-glass, rgba(18, 18, 42, 0.65));
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid var(--lola-glass-border, rgba(255, 255, 255, 0.08));
+          border-radius: 14px;
+          padding: 12px 14px;
+        }
+        .phone-bubble-label {
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          font-size: 0.55rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          color: var(--lola-sky, #4cc9f0);
+          margin-bottom: 4px;
+        }
+        .phone-bubble-text {
+          font-family: var(--font-body, 'Exo 2', system-ui, sans-serif);
+          font-size: 0.7rem;
+          color: var(--lola-text, #f0f0f8);
+          line-height: 1.5;
+          font-weight: 400;
+        }
+
+        /* ─── Ambient Glow ────────────────────────────────────── */
+        .hero-glow {
+          position: absolute;
+          width: 380px;
+          height: 380px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(67, 97, 238, 0.2) 0%,
+            rgba(76, 201, 240, 0.08) 50%,
+            transparent 70%
+          );
+          filter: blur(40px);
+          z-index: 1;
+          pointer-events: none;
+          animation: glow-breathe 4s ease-in-out infinite;
+        }
+
+        /* ─── Waveform ────────────────────────────────────────── */
+        .hero-waveform {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 4px;
+          height: 28px;
+        }
+        .hero-waveform-bar {
+          width: 3px;
+          border-radius: 2px;
+          background: linear-gradient(180deg, var(--lola-indigo, #4361ee) 0%, var(--lola-sky, #4cc9f0) 100%);
+          animation: waveform-ripple 1.4s ease-in-out infinite;
+          opacity: 0.6;
+        }
+
+        /* ─── Animations ──────────────────────────────────────── */
+        @keyframes phone-float {
+          0%, 100% { transform: rotate(-1.5deg) translateY(0); }
+          50% { transform: rotate(-1.5deg) translateY(-12px); }
+        }
+        @keyframes glow-breathe {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.05); }
+        }
+        @keyframes waveform-ripple {
+          0%, 100% { height: 6px; }
+          50% { height: var(--bar-h, 20px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .phone { animation: none; transform: rotate(-1.5deg); }
+          .hero-glow { animation: none; opacity: 0.7; }
+          .hero-waveform-bar { animation: none; }
+        }
+
+        /* ─── Mobile ──────────────────────────────────────────── */
+        @media (max-width: 768px) {
+          .hero {
+            flex-direction: column;
+            gap: 32px;
+            padding: 60px 20px 40px;
+          }
+          .hero-phone-area { order: 1; }
+          .hero-text {
+            order: 2;
+            align-items: center;
+            text-align: center;
+          }
+          .landing-btns { align-items: center; }
+          .phone {
+            width: 180px;
+            height: 390px;
+            border-radius: 36px;
+          }
+          .phone-screen { border-radius: 36px; }
+          .phone-overlay { border-radius: 36px; }
+          .phone-notch {
+            width: 68px;
+            height: 20px;
+            top: 10px;
+          }
+          .phone-bubble {
+            bottom: 30px;
+            left: 10px;
+            right: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+          }
+          .phone-bubble-text { font-size: 0.65rem; }
+          .hero-glow {
+            width: 280px;
+            height: 280px;
+          }
+        }
       </style>
-      <div class="container flex-center" style="position: relative; min-height: 100vh; flex-direction: column;">
-        <div style="position: relative; z-index: 5; width: 100%; max-width: 700px; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; gap: 16px;">
+
+      <div class="hero">
+        <!-- Ambient glow behind phone -->
+        <div class="hero-glow" style="top: 50%; right: 18%; transform: translate(50%, -50%);"></div>
+
+        <!-- Text column -->
+        <div class="hero-text">
           <h1 class="landing-title">LoLA</h1>
           <p class="landing-byline">by LokaLingo</p>
           <p class="landing-tagline">
@@ -556,16 +793,67 @@ class ViewLola extends HTMLElement {
             Powered by<br>
             <a href="https://ai.google.dev/gemini-api/docs/live" target="_blank">Gemini Live API</a>
           </div>
-          <div style="margin-top: 32px; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+          <div class="landing-btns">
             <button id="ob-create" class="landing-cta">Create Your Profile</button>
             <button id="ob-demo" class="landing-secondary">Demo Profiles</button>
             <button id="ob-split" class="landing-split">Split-Screen Demo</button>
           </div>
         </div>
+
+        <!-- Phone mockup -->
+        <div class="hero-phone-area">
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen" id="phone-screen">
+              <div class="phone-avatar-fallback"></div>
+            </div>
+            <div class="phone-overlay"></div>
+            <div class="phone-bubble">
+              <div class="phone-bubble-label">Sakura</div>
+              <div class="phone-bubble-text">Let\u2019s work on your pronunciation. Try saying \u201Cthree\u201D \u2014 focus on the \u201Cth\u201D sound.</div>
+            </div>
+            <div class="phone-home"></div>
+          </div>
+          <div class="hero-waveform" id="hero-waveform"></div>
+        </div>
       </div>
     `;
 
-    // Particles removed — brand philosophy: "calm and focused, not playful"
+    // Insert avatar image with fallback
+    const screen = this.querySelector("#phone-screen");
+    const img = document.createElement("img");
+    img.className = "phone-avatar";
+    img.src = "/avatars/profile-a/smiling.png";
+    img.alt = "LoLA coaching avatar";
+    img.loading = "eager";
+    img.onerror = () => {
+      img.remove(); // fallback div already in place
+    };
+    img.onload = () => {
+      const fallback = screen.querySelector(".phone-avatar-fallback");
+      if (fallback) fallback.remove();
+      screen.prepend(img);
+    };
+    // Trigger load — prepend only on success
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      const fallback = screen.querySelector(".phone-avatar-fallback");
+      if (fallback) fallback.remove();
+      screen.prepend(img);
+    };
+    tempImg.onerror = () => {}; // keep fallback
+    tempImg.src = img.src;
+
+    // Generate waveform bars
+    const waveform = this.querySelector("#hero-waveform");
+    for (let i = 0; i < 20; i++) {
+      const bar = document.createElement("div");
+      bar.className = "hero-waveform-bar";
+      const h = 8 + Math.sin(i * 0.6) * 12 + Math.random() * 6;
+      bar.style.setProperty("--bar-h", `${h}px`);
+      bar.style.animationDelay = `${i * 0.07}s`;
+      waveform.appendChild(bar);
+    }
 
     this.querySelector("#ob-create").addEventListener("click", () =>
       this.showL1Selection()
