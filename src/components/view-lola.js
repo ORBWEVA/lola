@@ -1,26 +1,32 @@
 /**
- * LoLA Session View — Adaptive coaching session with TalkingHead avatar.
- * Phase 1: Profile A/B selection → Gemini Live session with avatar + camera + transcript.
+ * LoLA Session View — Adaptive coaching session with expression carousel + waveform.
+ * Replaces TalkingHead 3D avatar with pre-rendered expression images that swap
+ * based on conversation context, plus dual audio waveform visualizers.
  */
 
 import "./audio-visualizer.js";
+import "./expression-carousel.js";
 import "./live-transcript.js";
 import {
   GeminiLiveAPI,
   MultimodalLiveResponseType,
 } from "../lib/gemini-live/geminilive.js";
-import { AudioStreamer, AudioPlayer, VideoStreamer } from "../lib/gemini-live/mediaUtils.js";
-import { TalkingHead } from "@met4citizen/talkinghead";
-
+import {
+  AudioStreamer,
+  AudioPlayer,
+  VideoStreamer,
+} from "../lib/gemini-live/mediaUtils.js";
+import { ExpressionCarousel } from "./expression-carousel.js";
 
 class ViewLola extends HTMLElement {
   constructor() {
     super();
     this._profile = null;
+    this._profileKey = null;
     this._systemInstruction = null;
-    this.head = null;
     this.videoStreamer = null;
     this.cameraActive = false;
+    this._outputBuffer = "";
   }
 
   connectedCallback() {
@@ -28,11 +34,10 @@ class ViewLola extends HTMLElement {
   }
 
   disconnectedCallback() {
-    if (this.audioStreamer) this.audioStreamer.stop();
-    if (this.videoStreamer) this.videoStreamer.stop();
-    if (this.client) this.client.disconnect();
-    if (this.head) this.head.isSpeaking = false;
+    this.cleanup();
   }
+
+  // ─── Profile Picker ──────────────────────────────────────────────
 
   async showProfilePicker() {
     this.innerHTML = `
@@ -61,7 +66,8 @@ class ViewLola extends HTMLElement {
       const data = await res.json();
       this.renderProfileCards(data);
     } catch (e) {
-      this.querySelector("#profiles-loading").textContent = "Failed to load profiles: " + e.message;
+      this.querySelector("#profiles-loading").textContent =
+        "Failed to load profiles: " + e.message;
     }
   }
 
@@ -78,7 +84,12 @@ class ViewLola extends HTMLElement {
     ];
 
     profiles.forEach((p) => {
-      const l1 = p.profile?.l1 === "en" ? "English" : p.profile?.l1 === "ko" ? "Korean" : "Japanese";
+      const l1 =
+        p.profile?.l1 === "en"
+          ? "English"
+          : p.profile?.l1 === "ko"
+            ? "Korean"
+            : "Japanese";
       const target = p.profile?.l1 === "en" ? "Japanese" : "English";
       const card = document.createElement("button");
       card.style.cssText = `
@@ -92,10 +103,17 @@ class ViewLola extends HTMLElement {
         <div style="font-size: 0.9rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
         <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-sub); opacity: 0.7;">${l1} → ${target}</div>
       `;
-      card.addEventListener("mouseenter", () => { card.style.borderColor = p.color; card.style.transform = "translateY(-3px)"; });
-      card.addEventListener("mouseleave", () => { card.style.borderColor = p.color + "33"; card.style.transform = "translateY(0)"; });
+      card.addEventListener("mouseenter", () => {
+        card.style.borderColor = p.color;
+        card.style.transform = "translateY(-3px)";
+      });
+      card.addEventListener("mouseleave", () => {
+        card.style.borderColor = p.color + "33";
+        card.style.transform = "translateY(0)";
+      });
       card.addEventListener("click", () => {
         this._profile = p.profile;
+        this._profileKey = p.key.replace("_", "-"); // profile_a → profile-a
         this._systemInstruction = p.system_instruction;
         this._profileLabel = p.label;
         this.showSession();
@@ -104,39 +122,156 @@ class ViewLola extends HTMLElement {
     });
   }
 
+  // ─── Session View ────────────────────────────────────────────────
+
   async showSession() {
     this.innerHTML = `
       <style>
-        .lola-session { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 16px; gap: 12px; }
-        .lola-avatar-container { width: 100%; max-width: 480px; height: 360px; border-radius: var(--radius-lg); overflow: hidden; background: #1a1a2e; position: relative; }
-        .lola-controls { display: flex; gap: 12px; align-items: center; }
-        .lola-btn { padding: 14px 32px; border-radius: var(--radius-full); border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 1rem; }
-        .lola-btn-primary { background: var(--color-accent-primary); color: white; }
-        .lola-btn-primary.active { background: var(--color-danger, #e74c3c); }
-        .lola-btn-secondary { background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--glass-border); }
-        .lola-btn-secondary.active { background: #2196F3; color: white; border-color: #2196F3; }
-        .lola-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        .lola-status { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; height: 1.2em; }
-        .lola-camera-preview { position: absolute; bottom: 8px; right: 8px; width: 120px; height: 90px; border-radius: 8px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); z-index: 5; }
-        .lola-camera-preview video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .lola-profile-badge { font-size: 0.8rem; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); background: var(--color-surface); border: 1px solid var(--glass-border); }
+        .lola-session {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-height: 100vh;
+          padding: 16px;
+          gap: 12px;
+        }
+        .lola-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          max-width: 600px;
+        }
+        .lola-avatar-wrap {
+          width: 100%;
+          max-width: 420px;
+          position: relative;
+        }
+        .lola-camera-preview {
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          width: 100px;
+          height: 75px;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 2px solid rgba(255,255,255,0.25);
+          z-index: 5;
+          display: none;
+        }
+        .lola-camera-preview video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transform: scaleX(-1);
+        }
+        .lola-waveforms {
+          display: flex;
+          gap: 16px;
+          width: 100%;
+          max-width: 600px;
+          height: 56px;
+        }
+        .wf-track {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--color-surface);
+          border: var(--glass-border);
+          border-radius: var(--radius-sm);
+          padding: 0 12px;
+          overflow: hidden;
+        }
+        .wf-label {
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .wf-label.lola { color: #d4a373; }
+        .wf-label.you { color: #a3b18a; }
+        .wf-track audio-visualizer {
+          flex: 1;
+          height: 100%;
+        }
+        .lola-controls {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+        }
+        .lola-btn {
+          padding: 14px 32px;
+          border-radius: var(--radius-full);
+          border: none;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 1rem;
+        }
+        .lola-btn-primary {
+          background: var(--color-accent-primary);
+          color: white;
+        }
+        .lola-btn-primary.active {
+          background: var(--color-danger, #e74c3c);
+        }
+        .lola-btn-secondary {
+          background: var(--color-surface);
+          color: var(--color-text-main);
+          border: 1px solid var(--glass-border);
+        }
+        .lola-btn-secondary.active {
+          background: #2196F3;
+          color: white;
+          border-color: #2196F3;
+        }
+        .lola-btn:hover {
+          transform: translateY(-2px);
+          filter: brightness(1.1);
+        }
+        .lola-status {
+          font-size: 0.85rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          height: 1.2em;
+        }
+        .lola-profile-badge {
+          font-size: 0.8rem;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: var(--radius-full);
+          background: var(--color-surface);
+          border: 1px solid var(--glass-border);
+        }
       </style>
 
       <div class="lola-session">
-        <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 600px;">
+        <div class="lola-header">
           <button id="lola-back" style="background: transparent; border: none; cursor: pointer; padding: 8px; opacity: 0.7; color: var(--color-text-main);">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <span class="lola-profile-badge">${this._profileLabel}</span>
-          <span class="lola-status" id="lola-status"></span>
+          <span class="lola-status" id="lola-status">Ready</span>
         </div>
 
-        <div class="lola-avatar-container" id="lola-avatar">
-          <div id="lola-camera-preview" class="lola-camera-preview" style="display:none;"></div>
+        <div class="lola-avatar-wrap">
+          <expression-carousel id="lola-carousel"></expression-carousel>
+          <div id="lola-camera-preview" class="lola-camera-preview"></div>
         </div>
 
-        <div style="width: 100%; max-width: 600px; height: 80px; display: flex; align-items: center; justify-content: center;">
-          <audio-visualizer id="user-viz"></audio-visualizer>
+        <div class="lola-waveforms">
+          <div class="wf-track">
+            <span class="wf-label lola">LoLA</span>
+            <audio-visualizer id="avatar-viz" color="#d4a373"></audio-visualizer>
+          </div>
+          <div class="wf-track">
+            <span class="wf-label you">You</span>
+            <audio-visualizer id="user-viz" color="#a3b18a"></audio-visualizer>
+          </div>
         </div>
 
         <div style="width: 100%; max-width: 600px; height: 200px; position: relative;">
@@ -155,55 +290,19 @@ class ViewLola extends HTMLElement {
       this.cleanup();
       this.showProfilePicker();
     });
+    this.querySelector("#lola-start").addEventListener("click", () =>
+      this.toggleSession()
+    );
+    this.querySelector("#lola-camera").addEventListener("click", () =>
+      this.toggleCamera()
+    );
 
-    this.querySelector("#lola-start").addEventListener("click", () => this.toggleSession());
-    this.querySelector("#lola-camera").addEventListener("click", () => this.toggleCamera());
-
-    // Initialize TalkingHead avatar
-    await this.initAvatar();
+    // Load expression images for selected profile
+    const carousel = this.querySelector("#lola-carousel");
+    carousel.setProfile(this._profileKey);
   }
 
-  async initAvatar() {
-    const container = this.querySelector("#lola-avatar");
-    if (!container) return;
-
-    try {
-      this.head = new TalkingHead(container, {
-        lipsyncModules: ["en"],
-        cameraView: "head",
-        cameraDistance: 0.1,
-        cameraY: 0,
-        lightAmbientIntensity: 2.5,
-        lightDirectIntensity: 15,
-        lightDirectPhi: 0.5,
-        lightDirectTheta: 2,
-        modelPixelRatio: window.devicePixelRatio || 1,
-        modelFPS: 30,
-        avatarIdleEyeContact: 0.6,
-        avatarSpeakingEyeContact: 0.7,
-        avatarSpeakingHeadMove: 0.4,
-      });
-
-      const avatarUrl = "https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes&quality=high&textureAtlas=1024";
-      await this.head.showAvatar(
-        { url: avatarUrl, body: "F", avatarMood: "happy", lipsyncLang: "en" },
-        (ev) => {
-          if (ev.lengthComputable) {
-            const pct = Math.round((ev.loaded / ev.total) * 100);
-            const status = this.querySelector("#lola-status");
-            if (status) status.textContent = `Loading avatar ${pct}%`;
-          }
-        }
-      );
-
-      const status = this.querySelector("#lola-status");
-      if (status) status.textContent = "Avatar ready";
-    } catch (e) {
-      console.error("Avatar init failed:", e);
-      const status = this.querySelector("#lola-status");
-      if (status) status.textContent = "Avatar failed — audio-only mode";
-    }
-  }
+  // ─── Session Control ─────────────────────────────────────────────
 
   async toggleSession() {
     const btn = this.querySelector("#lola-start");
@@ -235,19 +334,43 @@ class ViewLola extends HTMLElement {
       this.client.onReceiveResponse = (response) => {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
           this.handleAudio(response.data);
-        } else if (response.type === MultimodalLiveResponseType.TURN_COMPLETE) {
-          if (this.head) this.head.isSpeaking = false;
+        } else if (
+          response.type === MultimodalLiveResponseType.TURN_COMPLETE
+        ) {
+          // Avatar done speaking — return to neutral
+          const carousel = this.querySelector("#lola-carousel");
+          if (carousel) carousel.setExpression("neutral");
+          this._outputBuffer = "";
           const transcript = this.querySelector("live-transcript");
           if (transcript) transcript.finalizeAll();
-        } else if (response.type === MultimodalLiveResponseType.INTERRUPTED) {
-          if (this.head) this.head.isSpeaking = false;
+        } else if (
+          response.type === MultimodalLiveResponseType.INTERRUPTED
+        ) {
+          // Barge-in — return to neutral
+          const carousel = this.querySelector("#lola-carousel");
+          if (carousel) carousel.setExpression("neutral");
+          this._outputBuffer = "";
           if (this.audioPlayer) this.audioPlayer.interrupt();
-        } else if (response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION) {
+        } else if (
+          response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION
+        ) {
           const transcript = this.querySelector("live-transcript");
-          if (transcript) transcript.addInputTranscript(response.data.text, response.data.finished);
-        } else if (response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION) {
+          if (transcript)
+            transcript.addInputTranscript(
+              response.data.text,
+              response.data.finished
+            );
+        } else if (
+          response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION
+        ) {
           const transcript = this.querySelector("live-transcript");
-          if (transcript) transcript.addOutputTranscript(response.data.text, response.data.finished);
+          if (transcript)
+            transcript.addOutputTranscript(
+              response.data.text,
+              response.data.finished
+            );
+          // Detect expression from output text
+          this.detectExpression(response.data.text);
         }
       };
 
@@ -257,7 +380,7 @@ class ViewLola extends HTMLElement {
         this.sessionActive = false;
       };
 
-      // Get auth token (simple mode sends null)
+      // Get auth token
       let token = null;
       try {
         token = await this.getRecaptchaToken();
@@ -271,28 +394,31 @@ class ViewLola extends HTMLElement {
       this.audioStreamer = new AudioStreamer(this.client);
       await this.audioStreamer.start();
 
-      // Connect user visualizer
+      // Connect user waveform visualizer
       const userViz = this.querySelector("#user-viz");
-      if (userViz && this.audioStreamer.audioContext && this.audioStreamer.source) {
-        userViz.connect(this.audioStreamer.audioContext, this.audioStreamer.source);
+      if (
+        userViz &&
+        this.audioStreamer.audioContext &&
+        this.audioStreamer.source
+      ) {
+        userViz.connect(
+          this.audioStreamer.audioContext,
+          this.audioStreamer.source
+        );
       }
 
-      // Audio playback via AudioPlayer (reliable).
+      // Audio playback
       this.audioPlayer = new AudioPlayer();
       await this.audioPlayer.init();
 
-      // Tap into audio output with AnalyserNode for real-time lip sync
-      this.analyser = this.audioPlayer.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.4;
-      this._analyserData = new Uint8Array(this.analyser.frequencyBinCount);
-      // Reroute: worklet → gain → analyser → destination
-      this.audioPlayer.gainNode.disconnect();
-      this.audioPlayer.gainNode.connect(this.analyser);
-      this.analyser.connect(this.audioPlayer.audioContext.destination);
-
-      // Start lip sync loop — reads actual playback volume via AnalyserNode
-      this.startLipSyncLoop();
+      // Connect avatar waveform visualizer to the playback gain node
+      const avatarViz = this.querySelector("#avatar-viz");
+      if (avatarViz && this.audioPlayer.gainNode) {
+        avatarViz.connect(
+          this.audioPlayer.audioContext,
+          this.audioPlayer.gainNode
+        );
+      }
 
       this.sessionActive = true;
       status.textContent = "Connected — speak to LoLA";
@@ -312,50 +438,25 @@ class ViewLola extends HTMLElement {
     }
   }
 
-  startLipSyncLoop() {
-    if (this._lipSyncRunning) return;
-    this._lipSyncRunning = true;
+  // ─── Expression Detection ────────────────────────────────────────
 
-    const animate = () => {
-      if (!this._lipSyncRunning) return;
+  detectExpression(text) {
+    this._outputBuffer += " " + text;
+    // Keep buffer manageable — last ~200 chars
+    if (this._outputBuffer.length > 200) {
+      this._outputBuffer = this._outputBuffer.slice(-200);
+    }
 
-      // Read actual playback volume from AnalyserNode
-      let vol = 0;
-      if (this.analyser && this._analyserData) {
-        this.analyser.getByteFrequencyData(this._analyserData);
-        // Average low-mid frequencies (voice range ~80-3000Hz)
-        let sum = 0;
-        const bins = Math.min(32, this._analyserData.length);
-        for (let i = 1; i < bins; i++) sum += this._analyserData[i];
-        vol = sum / (bins - 1) / 255; // Normalize to 0-1
-      }
-
-      const mt = this.head?.mtAvatar;
-      if (mt && vol > 0.02) {
-        this.head.isSpeaking = true;
-        // Map volume to viseme morph targets with needsUpdate flag
-        if (mt["viseme_aa"]) { mt["viseme_aa"].newvalue = vol * 0.8; mt["viseme_aa"].needsUpdate = true; }
-        if (mt["viseme_O"]) { mt["viseme_O"].newvalue = vol * 0.4; mt["viseme_O"].needsUpdate = true; }
-        if (mt["viseme_I"]) { mt["viseme_I"].newvalue = vol * 0.2; mt["viseme_I"].needsUpdate = true; }
-        if (mt["jawOpen"]) { mt["jawOpen"].newvalue = vol * 0.6; mt["jawOpen"].needsUpdate = true; }
-      } else if (mt) {
-        // Silence — close mouth
-        if (mt["viseme_aa"]) { mt["viseme_aa"].newvalue = 0; mt["viseme_aa"].needsUpdate = true; }
-        if (mt["viseme_O"]) { mt["viseme_O"].newvalue = 0; mt["viseme_O"].needsUpdate = true; }
-        if (mt["viseme_I"]) { mt["viseme_I"].newvalue = 0; mt["viseme_I"].needsUpdate = true; }
-        if (mt["jawOpen"]) { mt["jawOpen"].newvalue = 0; mt["jawOpen"].needsUpdate = true; }
-      }
-
-      requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
+    const detected = ExpressionCarousel.detectFromText(this._outputBuffer);
+    if (detected) {
+      const carousel = this.querySelector("#lola-carousel");
+      if (carousel) carousel.setExpression(detected);
+      // Clear buffer after detection so same keywords don't re-trigger
+      this._outputBuffer = "";
+    }
   }
 
-  stopLipSyncLoop() {
-    this._lipSyncRunning = false;
-    this.analyser = null;
-    this._analyserData = null;
-  }
+  // ─── Camera ──────────────────────────────────────────────────────
 
   async toggleCamera() {
     const btn = this.querySelector("#lola-camera");
@@ -381,9 +482,13 @@ class ViewLola extends HTMLElement {
 
     try {
       this.videoStreamer = new VideoStreamer(this.client);
-      const videoEl = await this.videoStreamer.start({ fps: 1, width: 640, height: 480, quality: 0.7 });
+      const videoEl = await this.videoStreamer.start({
+        fps: 1,
+        width: 640,
+        height: 480,
+        quality: 0.7,
+      });
 
-      // Show preview
       if (previewContainer && videoEl) {
         previewContainer.style.display = "block";
         previewContainer.innerHTML = "";
@@ -398,6 +503,8 @@ class ViewLola extends HTMLElement {
     }
   }
 
+  // ─── Cleanup ─────────────────────────────────────────────────────
+
   cleanup() {
     if (this.audioStreamer) {
       this.audioStreamer.stop();
@@ -411,10 +518,6 @@ class ViewLola extends HTMLElement {
       this.client.disconnect();
       this.client = null;
     }
-    this.stopLipSyncLoop();
-    if (this.head) {
-      this.head.isSpeaking = false;
-    }
     if (this.audioPlayer) {
       this.audioPlayer.interrupt();
       this.audioPlayer = null;
@@ -422,7 +525,10 @@ class ViewLola extends HTMLElement {
 
     const userViz = this.querySelector("#user-viz");
     if (userViz?.disconnect) userViz.disconnect();
+    const avatarViz = this.querySelector("#avatar-viz");
+    if (avatarViz?.disconnect) avatarViz.disconnect();
 
+    this._outputBuffer = "";
     this.sessionActive = false;
     this.cameraActive = false;
   }

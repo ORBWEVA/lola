@@ -127,7 +127,7 @@ class AudioVisualizer extends HTMLElement {
         this.ctx.beginPath();
         this.ctx.moveTo(0, height / 2);
         this.ctx.lineTo(width, height / 2);
-        this.ctx.strokeStyle = '#5c6b48'; // Primary accent color
+        this.ctx.strokeStyle = this.getAttribute('color') || '#5c6b48';
         this.ctx.lineWidth = 2;
         this.ctx.globalAlpha = 0.3;
         this.ctx.stroke();
@@ -148,7 +148,7 @@ class AudioVisualizer extends HTMLElement {
         ctx.clearRect(0, 0, width, height);
 
         ctx.lineWidth = 3;
-        ctx.strokeStyle = '#5c6b48'; // Primary accent color
+        ctx.strokeStyle = this.getAttribute('color') || '#5c6b48';
         ctx.beginPath();
 
         // Configuration for "Guitar String" effect
