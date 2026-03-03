@@ -1088,6 +1088,7 @@ class ViewLola extends HTMLElement {
             : "Japanese";
       const target = p.profile?.l1 === "en" ? "Japanese" : "English";
       const card = document.createElement("button");
+      const imgKey = p.key.replace("_", "-");
       card.style.cssText = `
         background: var(--color-surface); border: 2px solid ${p.color}33;
         border-radius: var(--radius-lg); padding: 24px 28px; cursor: pointer;
@@ -1095,7 +1096,12 @@ class ViewLola extends HTMLElement {
         transition: all 0.3s ease; box-shadow: var(--shadow-sm);
       `;
       card.innerHTML = `
-        <div style="font-size: 0.7rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">${p.label}</div>
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+          <img src="/avatars/${imgKey}/smiling.png" alt="${p.label}"
+            style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: center 20%; border: 2px solid ${p.color}44; flex-shrink: 0;"
+            onerror="this.style.display='none'">
+          <div style="font-size: 0.7rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em;">${p.label}</div>
+        </div>
         <div style="font-size: 0.85rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
         <div style="margin-top: 10px; font-size: 0.75rem; color: var(--color-text-sub); opacity: 0.7;">${l1} \u2192 ${target}</div>
       `;
