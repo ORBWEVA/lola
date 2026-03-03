@@ -38,22 +38,22 @@ const PROFILES = {
   "profile-a": {
     label: "The Analyst (JA>EN)",
     description:
-      "A Japanese woman in her early 40s, thin-framed glasses, dark hair in a loose low bun, wearing a fitted charcoal turtleneck, sitting at a wooden desk in a bright office with indoor plants, resting her chin on her hand thoughtfully, warm window light from the side, 3/4 view, shallow depth of field, candid photo",
+      "A strikingly beautiful Japanese woman in her early 30s, sleek glasses, dark hair in an effortless low bun with loose strands framing her face, wearing a form-fitting charcoal turtleneck, confident direct gaze at camera, slight knowing smile, soft golden hour light on skin, editorial portrait photography, shallow depth of field, Vogue style",
   },
   "profile-b": {
     label: "The Explorer (JA>EN)",
     description:
-      "A Brazilian man in his late 20s, short curly dark hair, slight stubble, wearing a faded olive henley with sleeves pushed up, leaning against a railing on a sunny rooftop with city skyline behind him, golden hour lighting, relaxed grin, looking slightly off-camera, candid photo",
+      "A handsome Brazilian man in his late 20s, short curly dark hair, designer stubble, tanned skin, wearing a fitted olive henley with sleeves rolled up showing forearms, leaning against a rooftop railing, confident smoldering gaze directly at camera, golden hour light catching his features, editorial portrait photography, shallow depth of field, GQ style",
   },
   "profile-c": {
     label: "JP Beginner Analyst (EN>JA)",
     description:
-      "A British man in his mid-30s, light brown hair neatly parted, clean-shaven, wearing a navy crew neck sweater, sitting in a cozy coffee shop holding a flat white, morning window light casting soft shadows, straight-on angle, slight knowing smile, bokeh background with warm cafe tones, candid photo",
+      "A handsome British man in his mid-30s, light brown hair styled with effortless texture, clean-shaven sharp jawline, wearing a fitted navy crew neck sweater, sitting in a moody coffee shop, intense eye contact with camera, charming half-smile, cinematic morning light on face, editorial portrait photography, bokeh background, shallow depth of field, luxury lifestyle magazine",
   },
   "profile-d": {
     label: "JP Beginner Explorer (EN>JA)",
     description:
-      "A Korean-American woman in her mid-20s, long dark hair worn loose, wearing a colorful oversized vintage jacket, walking through a park in dappled afternoon shade, mid-laugh with one hand brushing hair from her face, slight motion blur on background, natural light, candid photo",
+      "A beautiful Korean-American woman in her mid-20s, long flowing dark hair, glowing skin, wearing a stylish oversized vintage jacket falling off one shoulder, standing in dappled golden light in a park, looking directly at camera with a radiant confident smile, magnetic presence, editorial fashion portrait photography, shallow depth of field, Elle magazine style",
   },
 };
 
