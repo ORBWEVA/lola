@@ -120,7 +120,7 @@ Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
 
 ## Reference Documents
 - `docs/LOLA_HACKATHON_SPEC.md` — build specification v2.2 (what to build, phases, submission checklist)
-- `docs/LOLA_MASTER_v1.4.md` — canonical master reference (coaching philosophy, 12 principles, competitive context, actual built state)
+- `docs/LOLA_MASTER_v1.5.md` — canonical master reference (coaching philosophy, 12 principles, competitive context, actual built state)
 - `GEMINI.md` — Immergo's original AI coding guide (base patterns)
 
 ## What NOT to Do

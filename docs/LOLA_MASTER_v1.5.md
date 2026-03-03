@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v1.4 — 2026-03-04)
+# LoLA — Loka Learning Avatar Master Reference (v1.5 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 1.5 | 2026-03-04T16:00:00Z | Claude Code (Opus 4.6) | Landing page hero redesign: split layout (text left, phone mockup right on desktop; stacked on mobile), CSS phone mockup with avatar image + glass speech bubble + waveform decoration + ambient glow animations. Avatar image generation pipeline updated (FLUX.1-schnell replaced deprecated schnell-Free, editorial-quality prompts). Demo profile cards now show circular avatar faces. Hidden reCAPTCHA badge. Equal-width CTA buttons. |
 | 1.4 | 2026-03-04T14:00:00Z | Claude Code (Opus 4.6) | Rebranded UI to LoLA Brand Guide v1 design system. Replaced Immergo "Mystic Archive" theme (sage green #a3b18a, paper textures, Libre Baskerville + Nunito) with LoLA brand identity: indigo #4361ee / rose #ff4d6d / sky #4cc9f0 on dark blue-black #0a0a1a, Exo 2 + Space Mono + Noto Sans JP fonts. Removed light mode toggle (dark-only per brand guide). Updated all 7 frontend files. Added design system reference to §5. |
 | 1.3 | 2026-03-04T12:00:00Z | Claude Code (Opus 4.6) | Completed hackathon build: 5-question onboarding UI, split-screen dual-session demo, Cloud Run deployment (deploy.sh + cloudbuild.yaml), expression carousel with waveform visualizer (replaced TalkingHead 3D avatar), avatar image generation pipeline (FLUX Schnell + Kontext Pro), README with Mermaid architecture diagram. |
 | 1.2 | 2026-02-22T14:30:00Z | Claude Code (Opus 4.6) | Updated to reflect actual built state after Phase 1 build sessions. Tech stack updated: Gemini 2.5 Flash Native Audio (not GPT-4o), TalkingHead with AnalyserNode lip sync (not HeadAudio), Kore voice. Added §5 actual project structure matching `server/` + `src/` layout. Updated §4 with 4 demo profiles (A/B/C/D), both-direction language support (EN→JA added), 3 L1 pattern files. Documented actual API architecture: FastAPI WebSocket proxy, API key mode, session token auth. Added implementation status tracking to §7. |
@@ -791,7 +792,8 @@ lola/
 │   └── LOLA_MASTER_v1.1.md            # This document (canonical master)
 ├── scripts/
 │   ├── dev.sh                          # Local development startup
-│   ├── example.deploy.sh               # Cloud Run deploy template
+│   ├── deploy.sh                       # Cloud Run deploy script
+│   ├── generate-expressions.js         # Interactive avatar generation (FLUX Schnell + Kontext Pro)
 │   └── install.sh                      # Dependency installation
 ├── server/                             # Python backend (FastAPI)
 │   ├── main.py                         # FastAPI app — routes, WebSocket, auth
@@ -815,7 +817,7 @@ lola/
 │   │   ├── app-root.js               # Root component / router
 │   │   ├── view-lola.js              # Main LoLA session — avatar, voice, profile picker
 │   │   ├── view-chat.js              # Text chat view (from Immergo)
-│   │   ├── view-splash.js            # Landing/splash screen
+│   │   ├── view-splash.js            # Landing/splash screen (unused — landing now in view-lola.js)
 │   │   ├── view-missions.js          # Missions view (from Immergo)
 │   │   ├── view-summary.js           # Session summary view
 │   │   ├── audio-visualizer.js       # Audio visualization component
@@ -827,6 +829,12 @@ lola/
 │   └── data/
 │       └── missions.json              # Mission scenarios (from Immergo)
 └── public/
+    ├── avatars/                        # Generated avatar expression images
+    │   ├── profile-{a,b,c,d}/         # Per-profile directories
+    │   │   ├── anchor.png             # Approved anchor image
+    │   │   ├── {expression}.png       # 8 expressions: neutral, thinking, smiling, etc.
+    │   │   └── candidates/            # Stage 1 candidates + prompts.json
+    │   └── expression-prompts.json    # Stage 2 prompt definitions
     ├── audio-processors/
     │   ├── capture.worklet.js         # Mic capture AudioWorklet
     │   └── playback.worklet.js        # Audio playback AudioWorklet
