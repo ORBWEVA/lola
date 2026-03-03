@@ -1,7 +1,10 @@
 /**
- * LoLA Session View — Adaptive coaching session with expression carousel + waveform.
- * Replaces TalkingHead 3D avatar with pre-rendered expression images that swap
- * based on conversation context, plus dual audio waveform visualizers.
+ * LoLA Session View — Adaptive coaching with expression carousel + waveform.
+ *
+ * Entry flow:
+ *   Landing → "Create Your Profile" (onboarding) or "Demo Profiles" (picker)
+ *   Onboarding: L1 selection → 5 questions (in learner's L1) → summary → session
+ *   Demo: 4 pre-built profile cards → session
  */
 
 import "./audio-visualizer.js";
@@ -18,48 +21,613 @@ import {
 } from "../lib/gemini-live/mediaUtils.js";
 import { ExpressionCarousel } from "./expression-carousel.js";
 
+// ─── Onboarding Question Data ────────────────────────────────────────
+
+const L1_OPTIONS = [
+  { key: "ja", label: "\u65E5\u672C\u8A9E", sub: "Japanese", flag: "\uD83C\uDDEF\uD83C\uDDF5" },
+  { key: "ko", label: "\uD55C\uAD6D\uC5B4", sub: "Korean", flag: "\uD83C\uDDF0\uD83C\uDDF7" },
+  { key: "en", label: "English", sub: "Learning Japanese", flag: "\uD83C\uDDEC\uD83C\uDDE7" },
+];
+
+const QUESTIONS = [
+  {
+    id: "q1",
+    text: {
+      en: "When you make a mistake in Japanese, what\u2019s your first reaction?",
+      ja: "\u82F1\u8A9E\u3092\u9593\u9055\u3048\u305F\u6642\u3001\u6700\u521D\u306B\u3069\u3046\u611F\u3058\u307E\u3059\u304B\uFF1F",
+      ko: "\uC601\uC5B4\uB97C \uD2C0\uB838\uC744 \uB54C, \uCCAB \uBC88\uC9F8 \uBC18\uC751\uC740 \uBB34\uC5C7\uC778\uAC00\uC694?",
+    },
+    options: [
+      {
+        key: "a",
+        en: "I want to understand WHY I made it",
+        ja: "\u306A\u305C\u9593\u9055\u3048\u305F\u306E\u304B\u7406\u89E3\u3057\u305F\u3044",
+        ko: "\uC65C \uD2C0\uB838\uB294\uC9C0 \uC774\uD574\uD558\uACE0 \uC2F6\uB2E4",
+      },
+      {
+        key: "b",
+        en: "I feel embarrassed and want to move on",
+        ja: "\u6065\u305A\u304B\u3057\u304F\u3066\u65E9\u304F\u5148\u306B\u9032\u307F\u305F\u3044",
+        ko: "\uBD80\uB044\uB7FD\uACE0 \uBE68\uB9AC \uB118\uC5B4\uAC00\uACE0 \uC2F6\uB2E4",
+      },
+      {
+        key: "c",
+        en: "I laugh it off and try again",
+        ja: "\u7B11\u3063\u3066\u3001\u3082\u3046\u4E00\u56DE\u3084\u3063\u3066\u307F\u308B",
+        ko: "\uC6C3\uACE0 \uB2E4\uC2DC \uC2DC\uB3C4\uD55C\uB2E4",
+      },
+    ],
+  },
+  {
+    id: "q2",
+    text: {
+      en: "How do you prefer to learn new things?",
+      ja: "\u65B0\u3057\u3044\u3053\u3068\u3092\u5B66\u3076\u3068\u304D\u3001\u3069\u306E\u65B9\u6CD5\u304C\u597D\u304D\u3067\u3059\u304B\uFF1F",
+      ko: "\uC0C8\uB85C\uC6B4 \uAC83\uC744 \uBC30\uC6B8 \uB54C \uC5B4\uB5A4 \uBC29\uBC95\uC744 \uC120\uD638\uD558\uB098\uC694?",
+    },
+    options: [
+      {
+        key: "a",
+        en: "Show me the rules and patterns",
+        ja: "\u30EB\u30FC\u30EB\u3068\u30D1\u30BF\u30FC\u30F3\u3092\u898B\u305B\u3066\u307B\u3057\u3044",
+        ko: "\uADDC\uCE59\uACFC \uD328\uD134\uC744 \uBCF4\uC5EC\uC8FC\uC138\uC694",
+      },
+      {
+        key: "b",
+        en: "Let me try and figure it out",
+        ja: "\u307E\u305A\u3084\u3063\u3066\u307F\u3066\u81EA\u5206\u3067\u7406\u89E3\u3057\u305F\u3044",
+        ko: "\uBA3C\uC800 \uD574\uBCF4\uACE0 \uC2A4\uC2A4\uB85C \uC774\uD574\uD558\uACE0 \uC2F6\uB2E4",
+      },
+      {
+        key: "c",
+        en: "Show me real examples of people using it",
+        ja: "\u5B9F\u969B\u306B\u4F7F\u3063\u3066\u3044\u308B\u4F8B\u3092\u898B\u305B\u3066\u307B\u3057\u3044",
+        ko: "\uC2E4\uC81C\uB85C \uC0AC\uC6A9\uD558\uB294 \uC608\uB97C \uBCF4\uC5EC\uC8FC\uC138\uC694",
+      },
+    ],
+  },
+  {
+    id: "q3",
+    text: {
+      en: "What motivates you most?",
+      ja: "\u4E00\u756A\u3084\u308B\u6C17\u304C\u51FA\u308B\u306E\u306F\uFF1F",
+      ko: "\uAC00\uC7A5 \uB3D9\uAE30\uBD80\uC5EC\uAC00 \uB418\uB294 \uAC83\uC740?",
+    },
+    options: [
+      {
+        key: "a",
+        en: "Seeing measurable progress",
+        ja: "\u6570\u5B57\u3067\u9032\u6B69\u304C\u898B\u3048\u308B\u3053\u3068",
+        ko: "\uC218\uCE58\uB85C \uBC1C\uC804\uC744 \uD655\uC778\uD558\uB294 \uAC83",
+      },
+      {
+        key: "b",
+        en: "Feeling more confident",
+        ja: "\u81EA\u4FE1\u304C\u3064\u3044\u305F\u3068\u611F\u3058\u308B\u3053\u3068",
+        ko: "\uC790\uC2E0\uAC10\uC774 \uC0DD\uAE30\uB294 \uAC83",
+      },
+      {
+        key: "c",
+        en: "Being able to use it in real situations",
+        ja: "\u5B9F\u969B\u306E\u5834\u9762\u3067\u4F7F\u3048\u308B\u3088\u3046\u306B\u306A\u308B\u3053\u3068",
+        ko: "\uC2E4\uC81C \uC0C1\uD669\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uC218 \uC788\uAC8C \uB418\uB294 \uAC83",
+      },
+    ],
+  },
+  {
+    id: "q4",
+    text: {
+      en: "When practicing Japanese, I prefer:",
+      ja: "\u82F1\u8A9E\u3092\u7DF4\u7FD2\u3059\u308B\u3068\u304D\uFF1A",
+      ko: "\uC601\uC5B4\uB97C \uC5F0\uC2B5\uD560 \uB54C:",
+    },
+    options: [
+      {
+        key: "a",
+        en: "Taking my time to think before speaking",
+        ja: "\u8A71\u3059\u524D\u306B\u3058\u3063\u304F\u308A\u8003\u3048\u305F\u3044",
+        ko: "\uB9D0\uD558\uAE30 \uC804\uC5D0 \uCDA9\uBD84\uD788 \uC0DD\uAC01\uD558\uACE0 \uC2F6\uB2E4",
+      },
+      {
+        key: "b",
+        en: "Jumping right in, even if imperfect",
+        ja: "\u5B8C\u74A7\u3058\u3083\u306A\u304F\u3066\u3082\u3059\u3050\u8A71\u3057\u305F\u3044",
+        ko: "\uC644\uBCBD\uD558\uC9C0 \uC54A\uC544\uB3C4 \uBC14\uB85C \uB9D0\uD558\uACE0 \uC2F6\uB2E4",
+      },
+    ],
+  },
+  {
+    id: "q5",
+    text: {
+      en: "I learn best when the teacher:",
+      ja: "\u5148\u751F\u304C\u6B21\u306E\u3088\u3046\u306B\u3057\u3066\u304F\u308C\u308B\u3068\u4E00\u756A\u5B66\u3073\u3084\u3059\u3044\uFF1A",
+      ko: "\uC120\uC0DD\uB2D8\uC774 \uC774\uB807\uAC8C \uD574\uC8FC\uBA74 \uAC00\uC7A5 \uC798 \uBC30\uC6B4\uB2E4:",
+    },
+    options: [
+      {
+        key: "a",
+        en: "Explains things thoroughly",
+        ja: "\u4E01\u5BE7\u306B\u8A73\u3057\u304F\u8AAC\u660E\u3057\u3066\u304F\u308C\u308B",
+        ko: "\uC790\uC138\uD558\uACE0 \uAF3C\uAF3C\uD558\uAC8C \uC124\uBA85\uD574\uC900\uB2E4",
+      },
+      {
+        key: "b",
+        en: "Keeps things moving and fun",
+        ja: "\u30C6\u30F3\u30DD\u3088\u304F\u697D\u3057\u304F\u9032\u3081\u3066\u304F\u308C\u308B",
+        ko: "\uBE60\uB974\uACE0 \uC7AC\uBBF8\uC788\uAC8C \uC9C4\uD589\uD574\uC900\uB2E4",
+      },
+      {
+        key: "c",
+        en: "Connects to things I already know",
+        ja: "\u3059\u3067\u306B\u77E5\u3063\u3066\u3044\u308B\u3053\u3068\u3068\u7D50\u3073\u3064\u3051\u3066\u304F\u308C\u308B",
+        ko: "\uC774\uBBF8 \uC54C\uACE0 \uC788\uB294 \uAC83\uACFC \uC5F0\uACB0\uD574\uC900\uB2E4",
+      },
+    ],
+  },
+];
+
+// Maps profile to the closest demo profile key (for avatar images)
+function closestProfileKey(profile) {
+  const isAnalytical =
+    profile.error_response === "analytical" ||
+    profile.learning_preference === "structure_first";
+  if (profile.l1 === "en") return isAnalytical ? "profile-c" : "profile-d";
+  return isAnalytical ? "profile-a" : "profile-b";
+}
+
+// Human-readable coaching focus from profile dimensions
+function coachFocus(profile, l1) {
+  const t = (en, ja, ko) => (l1 === "ja" ? ja : l1 === "ko" ? ko : en);
+  const items = [];
+  const map = {
+    error_response: {
+      analytical: t("structured explanations", "\u69CB\u9020\u7684\u306A\u8AAC\u660E", "\uAD6C\uC870\uC801 \uC124\uBA85"),
+      emotional_safety: t("emotional support", "\u5FC3\u7406\u7684\u30B5\u30DD\u30FC\u30C8", "\uC815\uC11C\uC801 \uC9C0\uC6D0"),
+      challenge_forward: t("dynamic challenges", "\u30C0\u30A4\u30CA\u30DF\u30C3\u30AF\u306A\u30C1\u30E3\u30EC\u30F3\u30B8", "\uB3C4\uC804\uC801 \uACFC\uC81C"),
+    },
+    learning_preference: {
+      structure_first: t("pattern recognition", "\u30D1\u30BF\u30FC\u30F3\u8A8D\u8B58", "\uD328\uD134 \uC778\uC2DD"),
+      experience_first: t("hands-on practice", "\u5B9F\u8DF5\u7684\u306A\u7DF4\u7FD2", "\uC2E4\uC804 \uC5F0\uC2B5"),
+      social_contextual: t("real-world scenarios", "\u5B9F\u4E16\u754C\u306E\u30B7\u30CA\u30EA\u30AA", "\uC2E4\uC81C \uC0C1\uD669 \uC5F0\uC2B5"),
+    },
+    motivation_driver: {
+      metrics: t("measurable progress", "\u6570\u5024\u3067\u898B\u3048\u308B\u9032\u6B69", "\uCE21\uC815 \uAC00\uB2A5\uD55C \uBC1C\uC804"),
+      emotion: t("confidence building", "\u81EA\u4FE1\u69CB\u7BC9", "\uC790\uC2E0\uAC10 \uD5A5\uC0C1"),
+      application: t("practical application", "\u5B9F\u7528\u7684\u306A\u5FDC\u7528", "\uC2E4\uC6A9\uC801 \uD65C\uC6A9"),
+    },
+  };
+  for (const [dim, values] of Object.entries(map)) {
+    const val = profile[dim];
+    if (val && values[val]) items.push(values[val]);
+  }
+  return items.slice(0, 3);
+}
+
+// ─── Shared Styles ───────────────────────────────────────────────────
+
+const SHARED_STYLES = `
+  .ob-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 24px;
+  }
+  .ob-title {
+    font-size: 2rem;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, var(--color-text-main) 30%, var(--color-accent-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ob-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.7;
+    text-align: center;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+  .ob-card {
+    background: var(--color-surface);
+    backdrop-filter: var(--backdrop-blur);
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    animation: ob-fadeIn 0.35s ease-out;
+  }
+  @keyframes ob-fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .ob-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .ob-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ob-progress-fill {
+    height: 100%;
+    background: var(--color-accent-primary);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .ob-progress-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    white-space: nowrap;
+  }
+  .ob-question {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .ob-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    color: var(--color-text-main);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1.4;
+  }
+  .ob-option:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--color-accent-primary);
+    transform: translateX(4px);
+  }
+  .ob-option:active {
+    transform: translateX(4px) scale(0.98);
+  }
+  .ob-back-link {
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 16px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .ob-back-link:hover { opacity: 1; }
+  .ob-l1-grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ob-l1-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 36px;
+    background: var(--color-surface);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-width: 140px;
+  }
+  .ob-l1-btn:hover {
+    border-color: var(--color-accent-primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .ob-l1-flag { font-size: 2.5rem; }
+  .ob-l1-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+  }
+  .ob-l1-sub {
+    font-size: 0.8rem;
+    color: var(--color-text-sub);
+    opacity: 0.7;
+  }
+  .ob-summary-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .ob-summary-item:last-child { border-bottom: none; }
+  .ob-summary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-accent-primary);
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+  .ob-summary-text {
+    font-size: 1rem;
+    color: var(--color-text-main);
+    line-height: 1.4;
+  }
+  .ob-start-btn {
+    padding: 16px 48px;
+    background: var(--color-accent-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ob-start-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+`;
+
+// ─── Component ───────────────────────────────────────────────────────
+
 class ViewLola extends HTMLElement {
   constructor() {
     super();
     this._profile = null;
     this._profileKey = null;
     this._systemInstruction = null;
+    this._profileLabel = null;
     this.videoStreamer = null;
     this.cameraActive = false;
     this._outputBuffer = "";
+    // Onboarding state
+    this._l1 = null;
+    this._answers = {};
   }
 
   connectedCallback() {
-    this.showProfilePicker();
+    this.showLanding();
   }
 
   disconnectedCallback() {
     this.cleanup();
   }
 
-  // ─── Profile Picker ──────────────────────────────────────────────
+  // ─── Landing ─────────────────────────────────────────────────────
 
-  async showProfilePicker() {
+  showLanding() {
     this.innerHTML = `
-      <div class="container" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; padding: 40px 20px;">
-        <h1 style="font-size: 2rem; font-weight: 800; text-align: center; background: linear-gradient(135deg, var(--color-text-main) 30%, var(--color-accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-          LoLA Demo
-        </h1>
-        <p style="font-size: 1.1rem; opacity: 0.7; text-align: center; max-width: 500px;">
-          Choose a learner profile to experience adaptive coaching.
-          Say "I go to the restaurant yesterday" to test error correction.
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <h1 class="ob-title">LoLA</h1>
+        <p class="ob-subtitle">
+          Adaptive language coaching that adapts to how your brain learns.
         </p>
-        <div id="profiles-loading" style="font-size: 0.9rem; opacity: 0.5;">Loading profiles...</div>
-        <div id="profiles-container" style="display: none; gap: 24px; flex-wrap: wrap; justify-content: center;"></div>
-        <button id="back-btn" style="margin-top: 16px; background: transparent; border: 1px solid var(--glass-border); color: var(--color-text-sub); padding: 10px 24px; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;">Back</button>
+        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; margin-top: 24px;">
+          <button id="ob-create" class="ob-start-btn">Create Your Profile</button>
+          <button id="ob-demo" class="ob-back-link">Use a Demo Profile</button>
+        </div>
+        <button id="ob-back" class="ob-back-link" style="margin-top: 8px;">Back</button>
+      </div>
+    `;
+    this.querySelector("#ob-create").addEventListener("click", () =>
+      this.showL1Selection()
+    );
+    this.querySelector("#ob-demo").addEventListener("click", () =>
+      this.showProfilePicker()
+    );
+    this.querySelector("#ob-back").addEventListener("click", () =>
+      this.dispatchEvent(
+        new CustomEvent("navigate", { bubbles: true, detail: { view: "splash" } })
+      )
+    );
+  }
+
+  // ─── L1 Selection ────────────────────────────────────────────────
+
+  showL1Selection() {
+    this.innerHTML = `
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <h2 class="ob-title" style="font-size: 1.5rem;">
+          What\u2019s your native language?
+        </h2>
+        <p class="ob-subtitle" style="font-size: 0.95rem;">
+          \u3042\u306A\u305F\u306E\u6BCD\u8A9E\u306F\uFF1F \u00B7 \uBAA8\uAD6D\uC5B4\uAC00 \uBB34\uC5C7\uC778\uAC00\uC694?
+        </p>
+        <div class="ob-l1-grid" id="l1-grid"></div>
+        <button id="l1-back" class="ob-back-link">Back</button>
       </div>
     `;
 
-    this.querySelector("#back-btn").addEventListener("click", () => {
-      this.dispatchEvent(
-        new CustomEvent("navigate", { bubbles: true, detail: { view: "splash" } })
-      );
+    const grid = this.querySelector("#l1-grid");
+    for (const opt of L1_OPTIONS) {
+      const btn = document.createElement("button");
+      btn.className = "ob-l1-btn";
+      btn.innerHTML = `
+        <span class="ob-l1-flag">${opt.flag}</span>
+        <span class="ob-l1-label">${opt.label}</span>
+        <span class="ob-l1-sub">${opt.sub}</span>
+      `;
+      btn.addEventListener("click", () => {
+        this._l1 = opt.key;
+        this._answers = {};
+        this.showQuestion(0);
+      });
+      grid.appendChild(btn);
+    }
+
+    this.querySelector("#l1-back").addEventListener("click", () =>
+      this.showLanding()
+    );
+  }
+
+  // ─── Question Cards ──────────────────────────────────────────────
+
+  showQuestion(index) {
+    const q = QUESTIONS[index];
+    const total = QUESTIONS.length;
+    const pct = ((index + 1) / total) * 100;
+    const text = q.text[this._l1] || q.text.en;
+
+    this.innerHTML = `
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <div class="ob-progress">
+          <div class="ob-progress-bar">
+            <div class="ob-progress-fill" style="width: ${pct}%"></div>
+          </div>
+          <span class="ob-progress-text">${index + 1} / ${total}</span>
+        </div>
+        <div class="ob-card">
+          <div class="ob-question">${text}</div>
+          <div id="ob-options"></div>
+        </div>
+        <button id="q-back" class="ob-back-link">
+          ${index === 0 ? "Back" : "\u2190 Previous"}
+        </button>
+      </div>
+    `;
+
+    const optionsEl = this.querySelector("#ob-options");
+    for (const opt of q.options) {
+      const btn = document.createElement("button");
+      btn.className = "ob-option";
+      btn.textContent = opt[this._l1] || opt.en;
+      btn.addEventListener("click", () => {
+        this._answers[q.id] = opt.key;
+        if (index < total - 1) {
+          this.showQuestion(index + 1);
+        } else {
+          this.submitOnboarding();
+        }
+      });
+      optionsEl.appendChild(btn);
+    }
+
+    this.querySelector("#q-back").addEventListener("click", () => {
+      if (index === 0) {
+        this.showL1Selection();
+      } else {
+        this.showQuestion(index - 1);
+      }
     });
+  }
+
+  // ─── Submit & Summary ────────────────────────────────────────────
+
+  async submitOnboarding() {
+    this.innerHTML = `
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <div style="font-size: 0.9rem; opacity: 0.6;">Generating your coaching profile...</div>
+      </div>
+    `;
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ l1: this._l1, answers: this._answers }),
+      });
+      const data = await res.json();
+      this._profile = data.profile;
+      this._systemInstruction = data.system_instruction;
+      this._profileKey = closestProfileKey(data.profile);
+
+      const target = this._l1 === "en" ? "Japanese" : "English";
+      this._profileLabel = `Custom (${this._l1.toUpperCase()}\u2192${target})`;
+
+      this.showProfileSummary();
+    } catch (e) {
+      this.innerHTML = `
+        <style>${SHARED_STYLES}</style>
+        <div class="ob-container">
+          <div style="color: var(--color-danger);">Failed to generate profile: ${e.message}</div>
+          <button id="retry" class="ob-back-link">Try Again</button>
+        </div>
+      `;
+      this.querySelector("#retry").addEventListener("click", () =>
+        this.showL1Selection()
+      );
+    }
+  }
+
+  showProfileSummary() {
+    const focuses = coachFocus(this._profile, this._l1);
+    const t = (en, ja, ko) =>
+      this._l1 === "ja" ? ja : this._l1 === "ko" ? ko : en;
+
+    const heading = t(
+      "Your Coach Will Focus On:",
+      "\u30B3\u30FC\u30C1\u306E\u91CD\u70B9\uFF1A",
+      "\uCF54\uCE58\uC758 \uC911\uC810:"
+    );
+    const startLabel = t(
+      "Start Session",
+      "\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u59CB\u3081\u308B",
+      "\uC138\uC158 \uC2DC\uC791"
+    );
+
+    this.innerHTML = `
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <h2 class="ob-title" style="font-size: 1.5rem;">${heading}</h2>
+        <div class="ob-card">
+          ${focuses.map((f) => `<div class="ob-summary-item"><div class="ob-summary-dot"></div><div class="ob-summary-text">${f}</div></div>`).join("")}
+        </div>
+        <button id="sum-start" class="ob-start-btn">${startLabel}</button>
+        <button id="sum-redo" class="ob-back-link">
+          ${t("Retake Quiz", "\u3084\u308A\u76F4\u3059", "\uB2E4\uC2DC \uD558\uAE30")}
+        </button>
+      </div>
+    `;
+
+    this.querySelector("#sum-start").addEventListener("click", () =>
+      this.showSession()
+    );
+    this.querySelector("#sum-redo").addEventListener("click", () =>
+      this.showL1Selection()
+    );
+  }
+
+  // ─── Profile Picker (Demo) ───────────────────────────────────────
+
+  async showProfilePicker() {
+    this.innerHTML = `
+      <style>${SHARED_STYLES}</style>
+      <div class="ob-container">
+        <h1 class="ob-title" style="font-size: 1.5rem;">Demo Profiles</h1>
+        <p class="ob-subtitle" style="font-size: 0.95rem;">
+          Choose a pre-built learner profile to experience adaptive coaching.
+        </p>
+        <div id="profiles-loading" style="font-size: 0.9rem; opacity: 0.5;">Loading profiles...</div>
+        <div id="profiles-container" style="display: none; gap: 16px; flex-wrap: wrap; justify-content: center;"></div>
+        <button id="back-btn" class="ob-back-link">Back</button>
+      </div>
+    `;
+
+    this.querySelector("#back-btn").addEventListener("click", () =>
+      this.showLanding()
+    );
 
     try {
       const res = await fetch("/api/demo-profiles");
@@ -94,14 +662,14 @@ class ViewLola extends HTMLElement {
       const card = document.createElement("button");
       card.style.cssText = `
         background: var(--color-surface); border: 2px solid ${p.color}33;
-        border-radius: var(--radius-lg); padding: 28px 32px; cursor: pointer;
-        min-width: 260px; max-width: 320px; text-align: left;
+        border-radius: var(--radius-lg); padding: 24px 28px; cursor: pointer;
+        min-width: 240px; max-width: 280px; text-align: left;
         transition: all 0.3s ease; box-shadow: var(--shadow-sm);
       `;
       card.innerHTML = `
-        <div style="font-size: 0.75rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">${p.label}</div>
-        <div style="font-size: 0.9rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
-        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-sub); opacity: 0.7;">${l1} → ${target}</div>
+        <div style="font-size: 0.7rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">${p.label}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
+        <div style="margin-top: 10px; font-size: 0.75rem; color: var(--color-text-sub); opacity: 0.7;">${l1} \u2192 ${target}</div>
       `;
       card.addEventListener("mouseenter", () => {
         card.style.borderColor = p.color;
@@ -113,7 +681,7 @@ class ViewLola extends HTMLElement {
       });
       card.addEventListener("click", () => {
         this._profile = p.profile;
-        this._profileKey = p.key.replace("_", "-"); // profile_a → profile-a
+        this._profileKey = p.key.replace("_", "-");
         this._systemInstruction = p.system_instruction;
         this._profileLabel = p.label;
         this.showSession();
@@ -285,10 +853,9 @@ class ViewLola extends HTMLElement {
       </div>
     `;
 
-    // Wire up buttons
     this.querySelector("#lola-back").addEventListener("click", () => {
       this.cleanup();
-      this.showProfilePicker();
+      this.showLanding();
     });
     this.querySelector("#lola-start").addEventListener("click", () =>
       this.toggleSession()
@@ -297,7 +864,6 @@ class ViewLola extends HTMLElement {
       this.toggleCamera()
     );
 
-    // Load expression images for selected profile
     const carousel = this.querySelector("#lola-carousel");
     carousel.setProfile(this._profileKey);
   }
@@ -323,21 +889,18 @@ class ViewLola extends HTMLElement {
     status.style.color = "var(--color-text-sub)";
 
     try {
-      // Initialize Gemini client
       this.client = new GeminiLiveAPI();
       this.client.setSystemInstructions(this._systemInstruction);
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
       this.client.setVoice("Kore");
 
-      // Handle responses
       this.client.onReceiveResponse = (response) => {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
           this.handleAudio(response.data);
         } else if (
           response.type === MultimodalLiveResponseType.TURN_COMPLETE
         ) {
-          // Avatar done speaking — return to neutral
           const carousel = this.querySelector("#lola-carousel");
           if (carousel) carousel.setExpression("neutral");
           this._outputBuffer = "";
@@ -346,7 +909,6 @@ class ViewLola extends HTMLElement {
         } else if (
           response.type === MultimodalLiveResponseType.INTERRUPTED
         ) {
-          // Barge-in — return to neutral
           const carousel = this.querySelector("#lola-carousel");
           if (carousel) carousel.setExpression("neutral");
           this._outputBuffer = "";
@@ -369,7 +931,6 @@ class ViewLola extends HTMLElement {
               response.data.text,
               response.data.finished
             );
-          // Detect expression from output text
           this.detectExpression(response.data.text);
         }
       };
@@ -380,7 +941,6 @@ class ViewLola extends HTMLElement {
         this.sessionActive = false;
       };
 
-      // Get auth token
       let token = null;
       try {
         token = await this.getRecaptchaToken();
@@ -390,11 +950,9 @@ class ViewLola extends HTMLElement {
 
       await this.client.connect(token);
 
-      // Start mic
       this.audioStreamer = new AudioStreamer(this.client);
       await this.audioStreamer.start();
 
-      // Connect user waveform visualizer
       const userViz = this.querySelector("#user-viz");
       if (
         userViz &&
@@ -407,11 +965,9 @@ class ViewLola extends HTMLElement {
         );
       }
 
-      // Audio playback
       this.audioPlayer = new AudioPlayer();
       await this.audioPlayer.init();
 
-      // Connect avatar waveform visualizer to the playback gain node
       const avatarViz = this.querySelector("#avatar-viz");
       if (avatarViz && this.audioPlayer.gainNode) {
         avatarViz.connect(
@@ -421,7 +977,7 @@ class ViewLola extends HTMLElement {
       }
 
       this.sessionActive = true;
-      status.textContent = "Connected — speak to LoLA";
+      status.textContent = "Connected \u2014 speak to LoLA";
       status.style.color = "#4CAF50";
     } catch (e) {
       console.error("Session start failed:", e);
@@ -433,25 +989,20 @@ class ViewLola extends HTMLElement {
   }
 
   handleAudio(data) {
-    if (this.audioPlayer) {
-      this.audioPlayer.play(data);
-    }
+    if (this.audioPlayer) this.audioPlayer.play(data);
   }
 
   // ─── Expression Detection ────────────────────────────────────────
 
   detectExpression(text) {
     this._outputBuffer += " " + text;
-    // Keep buffer manageable — last ~200 chars
     if (this._outputBuffer.length > 200) {
       this._outputBuffer = this._outputBuffer.slice(-200);
     }
-
     const detected = ExpressionCarousel.detectFromText(this._outputBuffer);
     if (detected) {
       const carousel = this.querySelector("#lola-carousel");
       if (carousel) carousel.setExpression(detected);
-      // Clear buffer after detection so same keywords don't re-trigger
       this._outputBuffer = "";
     }
   }
@@ -488,13 +1039,11 @@ class ViewLola extends HTMLElement {
         height: 480,
         quality: 0.7,
       });
-
       if (previewContainer && videoEl) {
         previewContainer.style.display = "block";
         previewContainer.innerHTML = "";
         previewContainer.appendChild(videoEl);
       }
-
       this.cameraActive = true;
       btn.classList.add("active");
       btn.textContent = "Camera ON";
@@ -522,12 +1071,10 @@ class ViewLola extends HTMLElement {
       this.audioPlayer.interrupt();
       this.audioPlayer = null;
     }
-
     const userViz = this.querySelector("#user-viz");
     if (userViz?.disconnect) userViz.disconnect();
     const avatarViz = this.querySelector("#avatar-viz");
     if (avatarViz?.disconnect) avatarViz.disconnect();
-
     this._outputBuffer = "";
     this.sessionActive = false;
     this.cameraActive = false;
