@@ -1,202 +1,256 @@
-# Immersive Language Learning with Live API
+# LoLA — Loka Learning Avatar
 
-[![GitHub stars](https://img.shields.io/github/stars/ZackAkil/immersive-language-learning-with-live-api?style=social)](https://github.com/ZackAkil/immersive-language-learning-with-live-api/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/ZackAkil/immersive-language-learning-with-live-api?style=social)](https://github.com/ZackAkil/immersive-language-learning-with-live-api/network/members)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Gemini Live API](https://img.shields.io/badge/Google%20Gemini%20Live%20API-8E75B2?style=flat&logo=google&logoColor=white)](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/live-api)
+Adaptive language coaching that adapts to **how your brain learns** — not just what you say.
 
-### **[🚀 Try the Demo at immersive-language-learning.app](https://immersive-language-learning.app/)**
+Built on the [Gemini Multimodal Live API](https://ai.google.dev/gemini-api/docs/live) with native audio, real-time vision, and a 12-principle neurolinguistic coaching framework. Two learners can make the same mistake and receive visibly different coaching based on their psychological profile.
 
-## ⚡️ Quick Deployment
-
-Launch your own private instance of the app to Google Cloud in just one click. No local setup required.
-
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run/?utm_source=github&utm_medium=unpaidsoc&utm_campaign=FY-Q1-global-cloud-ai-starter-apps&utm_content=immergo-app&utm_term=-)
+> Hackathon entry for the [Gemini Live Agent Challenge](https://googledevelopers.devpost.com/) (Live Agents category). Forked from Google's [Immergo](https://github.com/ZackAkil/immersive-language-learning-with-live-api) language learning demo (Apache 2.0).
 
 ---
 
-This is an interactive language learning application powered by the **Google Gemini Live SDK**. It simulates real-world roleplay scenarios (e.g., buying a bus ticket, ordering coffee) to help users practice speaking in various languages with an AI that adopts perfectly reactive personas.
+## The Innovation
 
-<div align="center">
-  <img src="assets/1.png" alt="Immersive Language Learning Screenshot 1" width="30%">
-  <img src="assets/2.png" alt="Immersive Language Learning Screenshot 2" width="30%">
-  <img src="assets/3.png" alt="Immersive Language Learning Screenshot 3" width="30%">
-</div>
+Most AI tutors give every learner the same correction. LoLA generates a **unique coaching personality** from a 30-second onboarding quiz, then adjusts in real time:
 
-## Features
+| Same error: *"I go to the restaurant yesterday"* | |
+|---|---|
+| **The Analyst** (Profile A) | Pauses. "Good structure. 'Yesterday' is a time marker — what tense does that need? 昨日...行った — same idea." Waits for the learner to self-correct. |
+| **The Explorer** (Profile B) | "You went to a restaurant! What did you eat? ナイス！" Recasts the error naturally, keeps momentum flowing. |
 
-- **Missions & Roleplay**: Chose from structured scenarios with specific objectives.
-- **Learning Modes**:
-  - **Teacher Mode**: Get helpful explanations and translations in your native language.
-  - **Immersive Mode**: Strict "No Free Rides" policy where you must speak the target language to proceed.
-- **Native Language Support**: Select your native language for tailored feedback and assistance.
-- **Proactive AI Persona**: The AI adopts a specific role (e.g., "Bus Driver", "Friendly Neighbor"). And will only speak when necessary.
-- **Real-time Multimodal Interaction**: Speak naturally with the AI, which responds with low-latency audio.
-- **Performance Scoring**: Get graded on your fluency (Tiro, Proficiens, Peritus) with actionable feedback (Immersive Mode).
+The split-screen demo runs both sessions simultaneously — same mic input, two coaches, two different responses.
 
-## Tech Stack
+---
 
-- **Frontend**: Vanilla JavaScript, Vite, Web Audio API, WebSocket.
-- **Backend**: Python, FastAPI, `google-genai` SDK.
-- **Communication**: WebSocket for full-duplex audio streaming.
+## Architecture
 
-## Prerequisites
+```mermaid
+graph TB
+    subgraph Browser["Browser (Vanilla JS + Vite)"]
+        OB["5-Question Onboarding<br/>L1 select → quiz → profile"]
+        VC["Voice Chat Session<br/>Expression carousel + waveforms"]
+        SS["Split-Screen Demo<br/>Two coaches side-by-side"]
 
-- Node.js (v18+)
-- Python (v3.10+)
-- Google Cloud Project with Vertex AI enabled.
-- Google Cloud Application Default Credentials configured.
+        subgraph Media["Media Layer"]
+            WA["Web Audio API<br/>AudioWorklets (capture + playback)"]
+            CAM["Camera (1 FPS)<br/>getUserMedia → JPEG"]
+            EC["Expression Carousel<br/>8 pre-rendered expressions"]
+            AV["Audio Visualizer<br/>AnalyserNode waveforms"]
+        end
+    end
 
-## Video Walkthrough
+    WS["WebSocket<br/>PCM audio + JPEG frames + JSON"]
 
-# [![Immersive Language Learning Walkthrough](http://img.youtube.com/vi/cdATDhw66pk/0.jpg)](http://www.youtube.com/watch?v=cdATDhw66pk)
+    subgraph CloudRun["Cloud Run (FastAPI)"]
+        PE["Profile Engine<br/>5 answers → coaching profile"]
+        IE["Instruction Engine<br/>Profile + L1 patterns<br/>+ 12 principles →<br/>system instruction"]
+        GL["Gemini Live Session(s)<br/>Audio + video + transcription"]
+        L1["L1 Pattern Files<br/>JA → EN | KO → EN | EN → JA"]
+    end
 
+    subgraph Gemini["Gemini 2.5 Flash Native Audio"]
+        GA["Real-time audio dialog"]
+        GT["Input/output transcription"]
+        GV["Vision (notebook reading)"]
+    end
 
-## Setup
-
-### 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd immersive-language-learning-with-live-api
+    OB --> PE
+    VC --> WS
+    SS --> WS
+    WA --> WS
+    CAM --> WS
+    WS --> GL
+    PE --> IE
+    IE --> GL
+    L1 --> IE
+    GL --> Gemini
 ```
 
-### 2. Quick Install
+### Audio Pipeline
 
-Run the installation script to set up both backend (Python venv) and frontend (Node modules) dependencies:
-
-```bash
-./scripts/install.sh
+```
+Browser mic → capture.worklet.js → PCM 16kHz → WebSocket → FastAPI → Gemini
+Gemini audio → WebSocket → playback.worklet.js → gainNode → speakers
+                                                      ↓
+                                                 AnalyserNode → waveform visualizer
+                                                      ↓
+                                            Output transcription → expression detection → carousel
 ```
 
-### 3. Environment Config
+### Split-Screen Pipeline
 
-Create a `.env` file in the root directory:
+```
+Single mic → capture worklet → PCM → ┬→ WebSocket A → Gemini (Analyst, voice: Kore)
+                                      └→ WebSocket B → Gemini (Explorer, voice: Aoede)
+
+AudioPlayer A ←─ WS A          AudioPlayer B ←─ WS B
+     │                              │
+     └── click panel to switch ─────┘  (one audible at a time, both show waveforms + transcripts)
+```
+
+---
+
+## Quick Start (Local Dev)
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.10+
+- A [Gemini API key](https://aistudio.google.com/apikey)
+
+### Setup
 
 ```bash
+git clone https://github.com/YOUR_ORG/lola.git
+cd lola
+
+# Install frontend dependencies
+npm install
+
+# Set up Python virtualenv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Configure environment
 cp .env.example .env
+# Edit .env and add your GEMINI_API_KEY
 ```
 
-Update `.env` with your Google Cloud details if necessary.
-
-## Running the Application
-
-### Development (Hot-Reload)
-
-Start both the backend server and frontend development server with a single command:
+### Run
 
 ```bash
 ./scripts/dev.sh
 ```
 
-This will:
+Opens at **http://localhost:5173**. Backend runs on port 8000 (Vite proxies `/api` and `/ws`).
 
-- Start the Python backend on port 8000.
-- Start the Vite frontend dev server (usually port 5173).
-- Enable `DEV_MODE` (bypassing Redis/ReCAPTCHA).
-- Allow you to access the app at `http://localhost:5173`.
+---
 
-### Production Build
+## Cloud Run Deployment
 
-To serve the built frontend via the Python server:
-
-1.  **Build**:
-    ```bash
-    npm run build
-    ```
-2.  **Run Server**:
-    ```bash
-    python3 server/main.py
-    ```
-3.  Access at `http://localhost:8000`.
-
-### 🚀 One-Click Production Deployment
-
-The fastest way to get the app running in production is using Google Cloud Run:
-
-1.  **Click the button below**:
- [![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run/?utm_source=github&utm_medium=unpaidsoc&utm_campaign=FY-Q1-global-cloud-ai-starter-apps&utm_content=immergo-app&utm_term=-)   
-2.  **Follow the prompts** in the Google Cloud Shell to authorize and deploy.
-
-### 🛠 Manual Deployment (via `deploy.sh`)
-
-If you prefer to deploy from your terminal, first create your own deployment script from the example:
+### One-command deploy
 
 ```bash
-cp scripts/example.deploy.sh scripts/deploy.sh
-```
+# 1. Authenticate and set project
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
 
-Edit `scripts/deploy.sh` with your project details, then run:
+# 2. Store API key in Secret Manager (once)
+echo -n "YOUR_GEMINI_API_KEY" | gcloud secrets create GEMINI_API_KEY --data-file=-
 
-```bash
+# 3. Deploy
 ./scripts/deploy.sh
 ```
 
-### Advanced Configuration
+### Automated CI/CD (Cloud Build)
 
-To enable production features like metrics, bot protection, and scalable rate limiting, configure the following environment variables (defined in `server/simple_tracker.py` and `server/main.py`):
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
 
-#### 1. BigQuery Metrics
+Or wire `cloudbuild.yaml` to a GitHub push trigger for continuous deployment.
 
-To track session start and page view events in BigQuery:
-
-- `BQ_DATASET`: Your BigQuery Dataset ID.
-- `BQ_TABLE`: Your BigQuery Table ID.
-- `DEMO_NAME`: (Optional) Name to identify this app in the metrics (default: `your-app-name`).
-
-#### 2. reCAPTCHA v3
-
-To protect against bots:
-
-- `RECAPTCHA_SITE_KEY`: Your Google reCAPTCHA v3 site key.
-  - _Note: Ensure your Cloud Run URL is added to the allowed domains in the reCAPTCHA console._
-
-#### 3. Redis (Rate Limiting)
-
-For scalable rate limiting across multiple container instances:
-
-- `REDIS_URL`: The URL of your Redis instance (e.g., `redis://10.0.0.1:6379/0`).
-  - _Note: If using Memorystore for Redis, ensure your Cloud Run service is connected to the same VPC network._
+**Demo day tip:** Avoid cold starts with `MIN_INSTANCES=1 ./scripts/deploy.sh`
 
 ---
 
-## 🏃‍♂️ Get Started with Vibe-Coding in Google Antigravity
+## Project Structure
 
-Build your own features, scenarios, or UI components in seconds using **Google Antigravity**. Whether you want to add a "Space Travel" mission or a new "Translator HUD," here is how to vibe-code your vision:
-
-### 1. Open the Repository in Antigravity
-
-Launch the workspace and point Antigravity to this folder. It will automatically ingest the `GEMINI.md` context file to understand the architecture.
-
-### 2. Describe Your Vibe
-
-Instead of writing boilerplate, just describe the feature you want.
-
-- _"Add a new mission called 'Mars Colony Arrival' where the AI acts as a customs officer."_
-- _"Make the splash screen heading pulse with a holographic glow."_
-- _"Add a 'Voice Select' dropdown to the HUD so I can pick Gemini's personality."_
-
-### 3. Iterate via Live Preview
-
-Use the `./scripts/dev.sh` hot-reloading server. As Antigravity writes the code, you'll see the UI update instantly. Tell it to _"make the buttons more glassmorphic"_ or _"shift the layout down for better balance"_ until it feels just right.
-
-### 4. Deploy Your Build
-
-Once you're happy with your changes, use the **One-Click Deployment** or use Antigravity's terminal to run `./scripts/deploy.sh` to push your build directly to Google Cloud Run.
+```
+lola/
+├── server/                     # FastAPI backend (Python)
+│   ├── main.py                 # App entry — REST, WebSocket, static serving
+│   ├── gemini_live.py          # Gemini Live API session manager
+│   ├── profile_engine.py       # 5-question onboarding → coaching profile
+│   ├── instruction_engine.py   # Profile + L1 + 12 principles → system instruction
+│   ├── principles.py           # 12-principle coaching framework (weighted)
+│   └── l1_patterns/            # L1 interference patterns
+│       ├── japanese.py         # JA→EN patterns + L1 bridges
+│       ├── korean.py           # KO→EN patterns + L1 bridges
+│       └── english.py          # EN→JA patterns + L1 bridges
+├── src/                        # Frontend (Vanilla JS Web Components)
+│   ├── components/
+│   │   ├── view-lola.js        # Main session — onboarding + voice chat
+│   │   ├── split-screen.js     # Dual-session demo view
+│   │   ├── expression-carousel.js  # Avatar expression image crossfade
+│   │   ├── audio-visualizer.js # Guitar-string waveform via AnalyserNode
+│   │   └── live-transcript.js  # Real-time transcript bubbles
+│   └── lib/gemini-live/        # Gemini Live API client + media utilities
+├── public/
+│   ├── avatars/                # Pre-rendered expression images (FLUX Kontext)
+│   └── audio-processors/       # AudioWorklet processors (capture + playback)
+├── scripts/
+│   ├── dev.sh                  # Start local dev environment
+│   ├── deploy.sh               # Cloud Run deploy script
+│   └── generate-expressions.js # Avatar image generation pipeline
+├── Dockerfile                  # Multi-stage build (Node + Python)
+├── cloudbuild.yaml             # Cloud Build CI/CD pipeline
+└── docs/                       # Specs, master doc, addenda
+```
 
 ---
 
-## 💰 Cost Analysis (Estimate)
+## Tech Stack
 
-> **NOTE:** Pricing based on the **Gemini 2.5 Flash Live API** costs as of **19th January 2026** (Source: [Google Cloud Pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing)).
-> _Disclaimer: Usage metadata currently does not discern between input and output tokens. For a conservative estimate, we assume all tokens are billed at the higher **output token** rate._
+| Layer | Technology |
+|-------|-----------|
+| LLM | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) |
+| Backend | Python 3.10 / FastAPI / `google-genai` SDK |
+| Frontend | Vanilla JS / Vite / Web Components / Web Audio API |
+| Avatar | Pre-rendered FLUX Kontext Pro expressions (8 per profile) |
+| Deployment | Google Cloud Run |
+| Avatar generation | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI |
 
-### Example Session: 1 Minute Conversation
+---
 
-**Context**: Teacher Mode (Audio + Transcript enabled), Duration **1:09**.
+## The 12-Principle Framework
 
-| Modality  | Token Count | Rate (Output)\* | Cost Estimate           |
-| :-------- | :---------- | :-------------- | :---------------------- |
-| **Audio** | 1,324       | $12.00 / 1M     | ~$0.0159                |
-| **Text**  | 518         | $2.00 / 1M      | ~$0.0010                |
-| **Total** | **1,842**   |                 | **~$0.017 (1.7 cents)** |
+LoLA's coaching is grounded in neurolinguistic research, not prompt engineering intuition:
+
+| # | Principle | Source |
+|---|-----------|--------|
+| 1 | Growth Mindset Activation | Dweck (2006) |
+| 2 | Rapport & Anchoring | Paling (2017) |
+| 3 | Emotional State Management | Immordino-Yang (2016) |
+| 4 | Cognitive Load Management | Sweller (2011) |
+| 5 | Spacing & Interleaving | Roediger & Butler (2011) |
+| 6 | Retrieval Practice | Roediger & Butler (2011) |
+| 7 | Sensory Engagement | Paling (2017) |
+| 8 | Positive Framing | Fredrickson (2001) |
+| 9 | Autonomy & Choice | Deci & Ryan (1985) |
+| 10 | Progressive Challenge | Vygotsky (1978) |
+| 11 | VAK Adaptation | Fleming (2001) |
+| 12 | Meta-Model Questioning | Bandler & Grinder (1975) |
+
+Each principle carries a weight (0.0–1.0) determined by the learner's profile. The instruction engine composes these into a unique system prompt per session.
+
+---
+
+## Supported Languages
+
+| Direction | L1 | Target | Profiles |
+|-----------|-----|--------|----------|
+| JA → EN | Japanese | English | Profile A (Analyst), Profile B (Explorer) |
+| KO → EN | Korean | English | Custom via onboarding |
+| EN → JA | English | Japanese | Profile C (Analyst), Profile D (Explorer) |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GEMINI_API_KEY` | Yes (local) | — | Google AI Studio API key |
+| `PROJECT_ID` | Yes (Vertex) | — | GCP project (alternative to API key) |
+| `DEV_MODE` | No | `true` | Skips reCAPTCHA + lenient rate limits |
+| `SESSION_TIME_LIMIT` | No | `180` | Max session length in seconds |
+| `RECAPTCHA_SITE_KEY` | No | — | reCAPTCHA v3 for bot protection |
+| `REDIS_URL` | No | — | Redis for distributed rate limiting |
+
+---
+
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE).
+
+Built by [ORBWEVA](https://orbweva.com) for the Gemini Live Agent Challenge hackathon.
