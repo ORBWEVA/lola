@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1600">
+<title>LoLA Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1600px;
+    height: 900px;
+    background: #0a0a1a;
+    font-family: 'Exo 2', sans-serif;
+    color: #e0e0e0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Subtle grid bg */
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Ambient glow blobs */
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+    pointer-events: none;
+  }
+  .glow-indigo { width: 500px; height: 500px; background: #4361ee; top: -100px; left: 100px; }
+  .glow-rose   { width: 400px; height: 400px; background: #ff4d6d; top: 250px; right: 50px; }
+  .glow-sky    { width: 450px; height: 450px; background: #4cc9f0; bottom: -100px; left: 400px; }
+
+  /* Header */
+  .header {
+    position: absolute;
+    top: 28px;
+    left: 48px;
+    right: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+  }
+  .logo-group {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .logo {
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    background: linear-gradient(135deg, #4361ee 0%, #4cc9f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+  }
+  .subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+  }
+  .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Main layout */
+  .diagram {
+    position: absolute;
+    top: 88px;
+    left: 48px;
+    right: 48px;
+    bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0;
+    z-index: 5;
+  }
+
+  /* Tier cards */
+  .tier {
+    border-radius: 16px;
+    padding: 22px 32px;
+    position: relative;
+    backdrop-filter: blur(20px);
+  }
+  .tier-browser {
+    background: rgba(67, 97, 238, 0.06);
+    border: 1px solid rgba(67, 97, 238, 0.2);
+    flex: 0 0 auto;
+  }
+  .tier-cloud {
+    background: rgba(255, 77, 109, 0.06);
+    border: 1px solid rgba(255, 77, 109, 0.2);
+    flex: 0 0 auto;
+  }
+  .tier-gemini {
+    background: rgba(76, 201, 240, 0.06);
+    border: 1px solid rgba(76, 201, 240, 0.2);
+    flex: 0 0 auto;
+  }
+
+  /* Tier headers */
+  .tier-label {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tier-browser .tier-label { color: #4361ee; }
+  .tier-cloud .tier-label   { color: #ff4d6d; }
+  .tier-gemini .tier-label  { color: #4cc9f0; }
+
+  .tier-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .tier-browser .dot { background: #4361ee; box-shadow: 0 0 8px #4361ee; }
+  .tier-cloud .dot   { background: #ff4d6d; box-shadow: 0 0 8px #ff4d6d; }
+  .tier-gemini .dot  { background: #4cc9f0; box-shadow: 0 0 8px #4cc9f0; }
+
+  .tier-tech {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin-left: auto;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* Inner boxes */
+  .boxes {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 18px;
+    flex: 1;
+    min-width: 180px;
+  }
+  .box-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .box-desc {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.5;
+  }
+
+  /* Cloud Run inner layout */
+  .cloud-inner {
+    display: grid;
+    grid-template-columns: 280px 28px 1fr;
+    grid-template-rows: auto 10px auto;
+    gap: 0 0;
+    align-items: stretch;
+  }
+  .cloud-left {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    display: flex;
+    align-items: center;
+  }
+  .cloud-left .box { width: 100%; }
+  .inner-arrow-cell {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cloud-top-right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .cloud-flow-arrow {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .cloud-bottom-right {
+    grid-column: 3;
+    grid-row: 3;
+  }
+
+  /* Arrow connectors */
+  .arrow-zone {
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .arrow-line {
+    width: 2px;
+    height: 100%;
+    position: relative;
+  }
+  .arrow-zone-1 .arrow-line {
+    background: linear-gradient(180deg, #4361ee, #ff4d6d);
+  }
+  .arrow-zone-2 .arrow-line {
+    background: linear-gradient(180deg, #ff4d6d, #4cc9f0);
+  }
+  .arrow-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    white-space: nowrap;
+    background: rgba(10, 10, 26, 0.9);
+    padding: 3px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .arrow-head {
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+  }
+  .arrow-zone-1 .arrow-head {
+    border-top: 8px solid #ff4d6d;
+  }
+  .arrow-zone-2 .arrow-head {
+    border-top: 8px solid #4cc9f0;
+  }
+
+  /* Inner arrow (Profile → Instruction) */
+  .inner-arrow {
+    display: flex;
+    align-items: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 18px;
+    padding: 0 6px;
+    flex: 0 0 28px;
+    justify-content: center;
+  }
+
+  /* Media strip */
+  .media-strip {
+    margin-top: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .media-strip span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .media-strip .chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* Flow arrow inside cloud tier */
+  .flow-arrow {
+    color: rgba(255, 77, 109, 0.5);
+    font-size: 16px;
+    text-align: center;
+    padding: 2px 0;
+  }
+
+  /* Gemini features row */
+  .gemini-features {
+    display: flex;
+    gap: 32px;
+    margin-top: 4px;
+  }
+  .gemini-feat {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gemini-feat::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4cc9f0;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="glow glow-indigo"></div>
+<div class="glow glow-rose"></div>
+<div class="glow glow-sky"></div>
+
+<div class="header">
+  <div class="logo-group">
+    <span class="logo">LoLA</span>
+    <span class="subtitle">System Architecture</span>
+  </div>
+  <span class="badge">Gemini API Developer Competition 2026</span>
+</div>
+
+<div class="diagram">
+  <!-- BROWSER TIER -->
+  <div class="tier tier-browser">
+    <div class="tier-label">
+      <span class="dot"></span>
+      Browser Client
+      <span class="tier-tech">Vanilla JS + Vite + Web Components</span>
+    </div>
+    <div class="boxes">
+      <div class="box">
+        <div class="box-title">Onboarding Flow</div>
+        <div class="box-desc">L1 language select<br>5-question coaching profile<br>4 pre-built demo profiles</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Voice Session</div>
+        <div class="box-desc">Real-time voice chat<br>Expression carousel + lip sync<br>Live transcript overlay</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Split-Screen Demo</div>
+        <div class="box-desc">Side-by-side coach comparison<br>Coach A vs Coach B<br>Dual audio visualizers</div>
+      </div>
+      <div class="box" style="flex: 0 0 auto; min-width: 260px;">
+        <div class="box-title">Media Pipeline</div>
+        <div class="box-desc">Web Audio API + AudioWorklets<br>Camera capture (1 FPS) + AnalyserNode waveforms</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW 1 -->
+  <div class="arrow-zone arrow-zone-1">
+    <div class="arrow-line">
+      <div class="arrow-head"></div>
+    </div>
+    <div class="arrow-label">WebSocket &mdash; PCM audio + JPEG frames + JSON control</div>
+  </div>
+
+  <!-- CLOUD RUN TIER -->
+  <div class="tier tier-cloud">
+    <div class="tier-label">
+      <span class="dot"></span>
+      Google Cloud Run
+      <span class="tier-tech">FastAPI + Python 3.10+</span>
+    </div>
+    <div class="cloud-inner">
+      <div class="cloud-left">
+        <div class="box">
+          <div class="box-title">Profile Engine</div>
+          <div class="box-desc">5-question assessment<br>&rarr; coaching profile<br>L1 + goals + style prefs</div>
+        </div>
+      </div>
+      <div class="inner-arrow-cell inner-arrow">&rarr;</div>
+      <div class="cloud-top-right">
+        <div class="box">
+          <div class="box-title">Adaptive Instruction Engine</div>
+          <div class="box-desc">Profile &times; L1 Interference Patterns &times; 12 Coaching Principles<br>&rarr; weighted system instruction (temperature 0.7)</div>
+        </div>
+      </div>
+      <div class="cloud-flow-arrow flow-arrow">&darr;</div>
+      <div class="cloud-bottom-right">
+        <div class="box">
+          <div class="box-title">Gemini Live Session Manager</div>
+          <div class="box-desc">Audio + video bidirectional proxy &bull; Input/output transcription &bull; Barge-in handling &bull; Session lifecycle</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW 2 -->
+  <div class="arrow-zone arrow-zone-2">
+    <div class="arrow-line">
+      <div class="arrow-head"></div>
+    </div>
+    <div class="arrow-label">google-genai SDK &mdash; BidiGenerateContent streaming RPC</div>
+  </div>
+
+  <!-- GEMINI TIER -->
+  <div class="tier tier-gemini">
+    <div class="tier-label">
+      <span class="dot"></span>
+      Gemini 2.5 Flash
+      <span class="tier-tech">Native Audio + Vision Model</span>
+    </div>
+    <div class="gemini-features">
+      <span class="gemini-feat">Real-time audio dialog</span>
+      <span class="gemini-feat">Vision (notebook reading)</span>
+      <span class="gemini-feat">Input/output transcription</span>
+      <span class="gemini-feat">sendClientContent()</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
