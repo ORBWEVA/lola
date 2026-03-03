@@ -146,13 +146,13 @@ class LiveTranscript extends HTMLElement {
 
         .bubble.model {
           align-self: flex-start;
-          color: #333; /* Dark text for model */
+          color: var(--lola-text, #f0f0f8);
           text-align: left;
         }
 
         .bubble.user {
           align-self: flex-end;
-          color: var(--color-accent-primary, #5c6b48); /* Accent color for user */
+          color: var(--lola-sky, #4cc9f0);
           text-align: right;
           font-weight: 500;
         }

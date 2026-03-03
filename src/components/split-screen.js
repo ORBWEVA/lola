@@ -82,7 +82,7 @@ class SplitScreen extends HTMLElement {
         .ss-title {
           font-size: 1.1rem;
           font-weight: 800;
-          background: linear-gradient(135deg, var(--color-text-main) 30%, var(--color-accent-primary));
+          background: var(--lola-gradient, linear-gradient(135deg, #4361ee 0%, #4cc9f0 100%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -117,7 +117,7 @@ class SplitScreen extends HTMLElement {
           overflow: hidden;
         }
         .ss-panel.listening {
-          border-color: var(--color-accent-primary);
+          border-color: var(--lola-indigo, #4361ee);
         }
         .ss-listen-badge {
           position: absolute;
@@ -129,7 +129,7 @@ class SplitScreen extends HTMLElement {
           letter-spacing: 0.1em;
           padding: 2px 7px;
           border-radius: var(--radius-full);
-          background: var(--color-accent-primary);
+          background: var(--lola-indigo, #4361ee);
           color: white;
           opacity: 0;
           transition: opacity 0.3s;
@@ -174,7 +174,9 @@ class SplitScreen extends HTMLElement {
           font-size: 0.55rem;
           font-weight: 700;
           text-transform: uppercase;
-          color: #d4a373;
+          letter-spacing: 2px;
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          color: var(--lola-rose, #ff4d6d);
           flex-shrink: 0;
         }
         .ss-wf-row audio-visualizer {
@@ -214,7 +216,9 @@ class SplitScreen extends HTMLElement {
           font-size: 0.6rem;
           font-weight: 700;
           text-transform: uppercase;
-          color: #a3b18a;
+          letter-spacing: 2px;
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          color: var(--lola-sky, #4cc9f0);
           flex-shrink: 0;
         }
         .ss-user-wf audio-visualizer {
@@ -235,14 +239,14 @@ class SplitScreen extends HTMLElement {
           transition: all 0.2s;
           font-size: 0.85rem;
         }
-        .ss-btn-primary { background: var(--color-accent-primary); color: white; }
-        .ss-btn-primary.active { background: var(--color-danger, #e74c3c); }
+        .ss-btn-primary { background: var(--lola-indigo, #4361ee); color: white; }
+        .ss-btn-primary.active { background: var(--lola-error, #ef476f); }
         .ss-btn-secondary {
           background: var(--color-surface);
           color: var(--color-text-main);
           border: 1px solid var(--glass-border);
         }
-        .ss-btn-secondary.active { background: #2196F3; color: white; border-color: #2196F3; }
+        .ss-btn-secondary.active { background: var(--lola-sky, #4cc9f0); color: white; border-color: var(--lola-sky, #4cc9f0); }
         .ss-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .ss-back-btn {
           background: transparent;
@@ -291,14 +295,14 @@ class SplitScreen extends HTMLElement {
           <!-- LEFT PANEL — The Analyst -->
           <div class="ss-panel listening" id="panel-left">
             <span class="ss-listen-badge">Listening</span>
-            <span class="ss-profile-name" style="color:#4A90D9;">${lp.label}</span>
+            <span class="ss-profile-name" style="color:var(--lola-indigo, #4361ee);">${lp.label}</span>
             <div class="ss-profile-desc">${lp.description}</div>
             <div class="ss-carousel-wrap">
               <expression-carousel id="carousel-left"></expression-carousel>
             </div>
             <div class="ss-wf-row">
               <span class="ss-wf-label">Coach</span>
-              <audio-visualizer id="viz-left" color="#d4a373"></audio-visualizer>
+              <audio-visualizer id="viz-left" color="#4361ee"></audio-visualizer>
             </div>
             <div class="ss-transcript-wrap">
               <live-transcript id="transcript-left"></live-transcript>
@@ -308,14 +312,14 @@ class SplitScreen extends HTMLElement {
           <!-- RIGHT PANEL — The Explorer -->
           <div class="ss-panel" id="panel-right">
             <span class="ss-listen-badge">Listening</span>
-            <span class="ss-profile-name" style="color:#D4A84B;">${rp.label}</span>
+            <span class="ss-profile-name" style="color:var(--lola-rose, #ff4d6d);">${rp.label}</span>
             <div class="ss-profile-desc">${rp.description}</div>
             <div class="ss-carousel-wrap">
               <expression-carousel id="carousel-right"></expression-carousel>
             </div>
             <div class="ss-wf-row">
               <span class="ss-wf-label">Coach</span>
-              <audio-visualizer id="viz-right" color="#d4a373"></audio-visualizer>
+              <audio-visualizer id="viz-right" color="#4361ee"></audio-visualizer>
             </div>
             <div class="ss-transcript-wrap">
               <live-transcript id="transcript-right"></live-transcript>
@@ -326,7 +330,7 @@ class SplitScreen extends HTMLElement {
         <div class="ss-bottom">
           <div class="ss-user-wf">
             <span class="ss-user-wf-label">You</span>
-            <audio-visualizer id="viz-user" color="#a3b18a"></audio-visualizer>
+            <audio-visualizer id="viz-user" color="#4cc9f0"></audio-visualizer>
           </div>
           <div class="ss-controls">
             <button class="ss-btn ss-btn-primary" id="ss-start">Start Both</button>

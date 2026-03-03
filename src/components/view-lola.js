@@ -217,9 +217,9 @@ const SHARED_STYLES = `
   }
   .ob-title {
     font-size: 2rem;
-    font-weight: 800;
+    font-weight: 700;
     text-align: center;
-    background: linear-gradient(135deg, var(--color-text-main) 30%, var(--color-accent-primary));
+    background: var(--lola-gradient, linear-gradient(135deg, #4361ee 0%, #4cc9f0 100%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -260,7 +260,7 @@ const SHARED_STYLES = `
   }
   .ob-progress-fill {
     height: 100%;
-    background: var(--color-accent-primary);
+    background: var(--lola-gradient, linear-gradient(135deg, #4361ee, #4cc9f0));
     border-radius: 2px;
     transition: width 0.3s ease;
   }
@@ -295,7 +295,7 @@ const SHARED_STYLES = `
   }
   .ob-option:hover {
     background: rgba(255,255,255,0.06);
-    border-color: var(--color-accent-primary);
+    border-color: var(--lola-indigo, #4361ee);
     transform: translateX(4px);
   }
   .ob-option:active {
@@ -333,7 +333,7 @@ const SHARED_STYLES = `
     min-width: 140px;
   }
   .ob-l1-btn:hover {
-    border-color: var(--color-accent-primary);
+    border-color: var(--lola-indigo, #4361ee);
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
   }
@@ -360,7 +360,7 @@ const SHARED_STYLES = `
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--color-accent-primary);
+    background: var(--lola-indigo, #4361ee);
     margin-top: 7px;
     flex-shrink: 0;
   }
@@ -371,10 +371,10 @@ const SHARED_STYLES = `
   }
   .ob-start-btn {
     padding: 16px 48px;
-    background: var(--color-accent-primary);
+    background: var(--lola-rose, #ff4d6d);
     color: white;
     border: none;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm, 8px);
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
@@ -415,20 +415,158 @@ class ViewLola extends HTMLElement {
 
   showLanding() {
     this.innerHTML = `
-      <style>${SHARED_STYLES}</style>
-      <div class="ob-container">
-        <h1 class="ob-title">LoLA</h1>
-        <p class="ob-subtitle">
-          Adaptive language coaching that adapts to how your brain learns.
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; margin-top: 24px;">
-          <button id="ob-create" class="ob-start-btn">Create Your Profile</button>
-          <button id="ob-demo" class="ob-back-link">Use a Demo Profile</button>
-          <button id="ob-split" class="ob-back-link" style="margin-top: 4px; font-style: italic; opacity: 0.6;">Split-Screen Demo</button>
+      <style>
+        ${SHARED_STYLES}
+        .landing-title {
+          font-family: var(--font-display, 'Exo 2', system-ui, sans-serif);
+          font-weight: 700;
+          font-size: clamp(2.5rem, 8vw, 4rem);
+          letter-spacing: -0.5px;
+          background: var(--lola-gradient, linear-gradient(135deg, #4361ee 0%, #4cc9f0 100%));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          position: relative;
+          z-index: 10;
+          text-align: center;
+          margin-bottom: 8px;
+          line-height: 1.1;
+        }
+        .landing-byline {
+          font-family: var(--font-display, 'Exo 2', system-ui, sans-serif);
+          font-weight: 300;
+          font-size: 0.9rem;
+          color: var(--lola-text-secondary, #9595b0);
+          text-align: center;
+          position: relative;
+          z-index: 10;
+          letter-spacing: 0.5px;
+        }
+        .landing-tagline {
+          font-family: var(--font-body, 'Exo 2', system-ui, sans-serif);
+          font-weight: 300;
+          font-size: clamp(1rem, 3vw, 1.3rem);
+          color: var(--lola-text-secondary, #9595b0);
+          text-align: center;
+          max-width: 500px;
+          line-height: 1.6;
+          position: relative;
+          z-index: 10;
+        }
+        .landing-powered {
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          opacity: 0.5;
+          color: var(--lola-text-secondary, #9595b0);
+          text-align: center;
+          line-height: 1.8;
+          position: relative;
+          z-index: 10;
+          margin-top: 8px;
+        }
+        .landing-powered a {
+          color: var(--lola-indigo, #4361ee);
+          text-decoration: none;
+          font-weight: 700;
+          border-bottom: 1px solid transparent;
+          transition: all 0.2s;
+        }
+        .landing-powered a:hover {
+          border-bottom-color: var(--lola-indigo, #4361ee);
+        }
+        .landing-cta {
+          position: relative;
+          z-index: 20;
+          background: var(--lola-rose, #ff4d6d);
+          color: #ffffff;
+          padding: 16px 48px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: var(--shadow-sm);
+          overflow: hidden;
+        }
+        .landing-cta:hover {
+          transform: translateY(-2px);
+          background: var(--lola-rose-hover, #ff6680);
+          box-shadow: var(--shadow-md);
+        }
+        .landing-cta::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0;
+          width: 200%; height: 100%;
+          background: linear-gradient(115deg, transparent 0%, transparent 45%, rgba(255,255,255,0.2) 50%, transparent 55%, transparent 100%);
+          transform: translateX(-150%) skewX(-15deg);
+          transition: transform 0.6s;
+        }
+        .landing-cta:hover::after {
+          transform: translateX(150%) skewX(-15deg);
+        }
+        .landing-secondary {
+          position: relative;
+          z-index: 20;
+          background: transparent;
+          border: 1px solid var(--lola-surface-3, #22224a);
+          color: var(--lola-text-secondary, #9595b0);
+          padding: 14px 36px;
+          font-size: 1rem;
+          font-weight: 500;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .landing-secondary:hover {
+          border-color: var(--lola-indigo, #4361ee);
+          color: var(--lola-text, #f0f0f8);
+          transform: translateY(-2px);
+        }
+        .landing-split {
+          position: relative;
+          z-index: 20;
+          background: var(--lola-indigo, #4361ee);
+          color: white;
+          padding: 12px 32px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: var(--shadow-sm);
+        }
+        .landing-split:hover {
+          transform: translateY(-2px);
+          background: var(--lola-indigo-hover, #5271ff);
+          box-shadow: var(--shadow-md);
+        }
+      </style>
+      <div class="container flex-center" style="position: relative; min-height: 100vh; flex-direction: column;">
+        <div style="position: relative; z-index: 5; width: 100%; max-width: 700px; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; gap: 16px;">
+          <h1 class="landing-title">LoLA</h1>
+          <p class="landing-byline">by LokaLingo</p>
+          <p class="landing-tagline">
+            Every learner deserves a coach who understands how they think.
+          </p>
+          <div class="landing-powered">
+            Powered by<br>
+            <a href="https://ai.google.dev/gemini-api/docs/live" target="_blank">Gemini Live API</a>
+          </div>
+          <div style="margin-top: 32px; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+            <button id="ob-create" class="landing-cta">Create Your Profile</button>
+            <button id="ob-demo" class="landing-secondary">Demo Profiles</button>
+            <button id="ob-split" class="landing-split">Split-Screen Demo</button>
+          </div>
         </div>
-        <button id="ob-back" class="ob-back-link" style="margin-top: 8px;">Back</button>
       </div>
     `;
+
+    // Particles removed — brand philosophy: "calm and focused, not playful"
+
     this.querySelector("#ob-create").addEventListener("click", () =>
       this.showL1Selection()
     );
@@ -438,11 +576,6 @@ class ViewLola extends HTMLElement {
     this.querySelector("#ob-split").addEventListener("click", () =>
       this.dispatchEvent(
         new CustomEvent("navigate", { bubbles: true, detail: { view: "split" } })
-      )
-    );
-    this.querySelector("#ob-back").addEventListener("click", () =>
-      this.dispatchEvent(
-        new CustomEvent("navigate", { bubbles: true, detail: { view: "splash" } })
       )
     );
   }
@@ -651,10 +784,10 @@ class ViewLola extends HTMLElement {
     container.style.display = "flex";
 
     const profiles = [
-      { key: "profile_a", ...data.profile_a, color: "#4A90D9" },
-      { key: "profile_b", ...data.profile_b, color: "#D4A84B" },
-      { key: "profile_c", ...data.profile_c, color: "#E85D75" },
-      { key: "profile_d", ...data.profile_d, color: "#50C878" },
+      { key: "profile_a", ...data.profile_a, color: "#4361ee" },
+      { key: "profile_b", ...data.profile_b, color: "#ff4d6d" },
+      { key: "profile_c", ...data.profile_c, color: "#4cc9f0" },
+      { key: "profile_d", ...data.profile_d, color: "#06d6a0" },
     ];
 
     profiles.forEach((p) => {
@@ -758,15 +891,16 @@ class ViewLola extends HTMLElement {
           overflow: hidden;
         }
         .wf-label {
-          font-size: 0.7rem;
+          font-size: 0.65rem;
+          font-family: var(--font-mono, 'Space Mono', monospace);
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 2px;
           white-space: nowrap;
           flex-shrink: 0;
         }
-        .wf-label.lola { color: #d4a373; }
-        .wf-label.you { color: #a3b18a; }
+        .wf-label.lola { color: var(--lola-indigo, #4361ee); }
+        .wf-label.you { color: var(--lola-sky, #4cc9f0); }
         .wf-track audio-visualizer {
           flex: 1;
           height: 100%;
@@ -786,21 +920,21 @@ class ViewLola extends HTMLElement {
           font-size: 1rem;
         }
         .lola-btn-primary {
-          background: var(--color-accent-primary);
+          background: var(--lola-indigo, #4361ee);
           color: white;
         }
         .lola-btn-primary.active {
-          background: var(--color-danger, #e74c3c);
+          background: var(--lola-error, #ef476f);
         }
         .lola-btn-secondary {
-          background: var(--color-surface);
-          color: var(--color-text-main);
-          border: 1px solid var(--glass-border);
+          background: transparent;
+          color: var(--lola-text-secondary, #9595b0);
+          border: 1px solid var(--lola-surface-3, #22224a);
         }
         .lola-btn-secondary.active {
-          background: #2196F3;
+          background: var(--lola-sky, #4cc9f0);
           color: white;
-          border-color: #2196F3;
+          border-color: var(--lola-sky, #4cc9f0);
         }
         .lola-btn:hover {
           transform: translateY(-2px);
@@ -840,11 +974,11 @@ class ViewLola extends HTMLElement {
         <div class="lola-waveforms">
           <div class="wf-track">
             <span class="wf-label lola">LoLA</span>
-            <audio-visualizer id="avatar-viz" color="#d4a373"></audio-visualizer>
+            <audio-visualizer id="avatar-viz" color="#4361ee"></audio-visualizer>
           </div>
           <div class="wf-track">
             <span class="wf-label you">You</span>
-            <audio-visualizer id="user-viz" color="#a3b18a"></audio-visualizer>
+            <audio-visualizer id="user-viz" color="#4cc9f0"></audio-visualizer>
           </div>
         </div>
 
