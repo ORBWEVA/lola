@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v1.2 — 2026-02-22)
+# LoLA — Loka Learning Avatar Master Reference (v1.3 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 1.3 | 2026-03-04T12:00:00Z | Claude Code (Opus 4.6) | Completed hackathon build: 5-question onboarding UI, split-screen dual-session demo, Cloud Run deployment (deploy.sh + cloudbuild.yaml), expression carousel with waveform visualizer (replaced TalkingHead 3D avatar), avatar image generation pipeline (FLUX Schnell + Kontext Pro), README with Mermaid architecture diagram. |
 | 1.2 | 2026-02-22T14:30:00Z | Claude Code (Opus 4.6) | Updated to reflect actual built state after Phase 1 build sessions. Tech stack updated: Gemini 2.5 Flash Native Audio (not GPT-4o), TalkingHead with AnalyserNode lip sync (not HeadAudio), Kore voice. Added §5 actual project structure matching `server/` + `src/` layout. Updated §4 with 4 demo profiles (A/B/C/D), both-direction language support (EN→JA added), 3 L1 pattern files. Documented actual API architecture: FastAPI WebSocket proxy, API key mode, session token auth. Added implementation status tracking to §7. |
 | 1.1 | 2026-02-20T15:00:00Z | Claude.ai (Opus 4.6) | Added §4 Academic Foundations subsection with principle-by-principle source mapping (Dweck, Sweller, Immordino-Yang, Roediger, Flavell, Hammond, Bandler & Grinder, Paling). Created companion doc `LOLA_12_PRINCIPLE_ACADEMIC_FOUNDATIONS.md` with full ISBNs, research findings, and hackathon/investor Q&A guidance. |
 | 1.0 | 2026-02-20T14:00:00Z | Claude.ai (Opus 4.6) | Initial master doc. Consolidated from LOLA_PRD_v1.md, LOLA_PRD_v2.md, lola_shizuku_strategic_scope.md, LOKALINGO_MASTER §9, and competitive research update brief v3. Strategic repositioning: adaptive coaching engine + educator creator platform + self-marketing pipeline. Co-active triangle architecture (Educator ↔ AI ↔ Learner). Personality framework integration roadmap (MBTI, Enneagram, Big Five, DISC, StrengthsFinder, EQ). 12-principle coaching framework as §4. Hackathon MVP demo spec. Japan market crisis context. Praktika competitive analysis. CIP as internal architecture shorthand only — natural language in all positioning. |
@@ -476,15 +477,16 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | **LLM** | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) | Speech-to-speech coaching via Live API — no separate STT/TTS needed |
 | **Backend** | Python 3.10+ / FastAPI / `google-genai` SDK | WebSocket proxy between browser and Gemini Live API |
 | **Frontend** | Vanilla JS / Vite / Web Components / Web Audio API | Voice chat interface, profile picker, avatar rendering |
-| **3D Avatar** | TalkingHead v1.7 (@met4citizen/talkinghead) + ThreeJS/WebGL | Ready Player Me full-body avatar with lip sync |
-| **Lip Sync** | AnalyserNode (Web Audio API) | Real-time playback volume → viseme blend shapes (not HeadAudio — see notes) |
+| **Avatar** | Pre-rendered FLUX expressions (8 per profile) | Expression carousel with keyword-based detection from output transcription |
+| **Avatar Generation** | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI | `scripts/generate-expressions.js` — automated pipeline for character-consistent expression images |
+| **Audio Visualization** | AnalyserNode (Web Audio API) | Guitar-string waveform visualizer — shows activity even when session is muted |
 | **Audio** | AudioWorklets (capture + playback) | PCM streaming, VAD for barge-in |
 | **Session State** | In-memory (FastAPI) | Session tokens, rate limiting |
-| **Deployment** | Google Cloud Run (target) | Containerized FastAPI + built frontend |
+| **Deployment** | Google Cloud Run | Containerized FastAPI + built frontend, deployed via `scripts/deploy.sh` or `cloudbuild.yaml` CI/CD |
 
 **Key deviation from original spec:** The original plan called for GPT-4o + Whisper + ElevenLabs (text pipeline). The actual build uses Gemini Live API with native audio (speech-to-speech), which eliminates the need for separate STT and TTS services. This is a significant improvement — lower latency, native barge-in, and deeper Gemini integration for the hackathon.
 
-**Lip sync approach:** HeadAudio (the planned viseme detection worklet) was not used. Instead, lip sync is driven by an AnalyserNode inserted into the audio output chain (`gainNode → analyser → destination`). A `requestAnimationFrame` loop reads frequency data from the AnalyserNode and maps volume to viseme blend shapes (`viseme_aa`, `viseme_O`, `viseme_I`, `jawOpen`) via TalkingHead's morph target system. Critical implementation detail: TalkingHead requires both `newvalue` AND `needsUpdate = true` on morph targets — without `needsUpdate`, updates are silently skipped (line 1591 of talkinghead.mjs).
+**Avatar pivot:** The original plan used TalkingHead v1.7 (3D WebGL avatar with lip sync via AnalyserNode → viseme blend shapes). This was replaced with an expression carousel approach: pre-rendered 2D character images (8 expressions per profile) generated via FLUX Schnell (anchor portraits) + FLUX Kontext Pro (expression variants). Expression detection scans Gemini's output transcription for keywords (laugh, question, think, etc.) and crossfades between expression images. This approach is lighter-weight, more visually distinctive, and avoids WebGL compatibility issues. Audio visualization uses an AnalyserNode-driven waveform display instead of lip sync.
 
 ---
 
@@ -548,10 +550,13 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | Avatar lip sync (AnalyserNode) | DONE | Real-time volume → viseme blend shapes. Mouth moves but sync quality needs polish. |
 | Demo profile picker (4 cards) | DONE | Card-based UI with language direction labels |
 | Camera/vision input to Gemini | DONE | VideoStreamer sends JPEG frames at 1fps via WebSocket; PiP camera preview in session view |
-| 5-question onboarding UI (L1 selection + questions) | NOT STARTED | Currently using pre-built demo profile picker |
-| Split-screen demo view (dual sessions) | NOT STARTED | Single session only |
+| Expression carousel + waveform visualizer | DONE | Replaced TalkingHead 3D avatar. 8 expressions per profile, keyword detection from transcription. |
+| Avatar image generation pipeline | DONE | `scripts/generate-expressions.js` — FLUX Schnell anchors + Kontext Pro expressions via Together AI |
+| 5-question onboarding UI (L1 selection + questions) | DONE | `view-lola.js` — L1 picker → 5 adaptive questions → profile generation |
+| Split-screen demo view (dual sessions) | DONE | `split-screen.js` — shared mic, dual WebSockets, click-to-listen, independent waveforms + transcripts |
+| Cloud Run deployment | DONE | `scripts/deploy.sh` (one-command) + `cloudbuild.yaml` (CI/CD). Multi-stage Dockerfile. |
+| README + architecture diagram | DONE | Mermaid architecture diagram, ASCII audio/split-screen pipelines, full project docs |
 | Educator dashboard mock | NOT STARTED | |
-| Cloud Run deployment | NOT STARTED | Dockerfile exists from Immergo |
 | Demo video recording | NOT STARTED | |
 
 ### Q1 2026 (Post-Hackathon)
@@ -593,9 +598,18 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | **Claude Code** | Primary development agent |
 | **Claude.ai (this project)** | Architecture, specs, strategic planning |
 | **Trev (OpenClaw)** | Autonomous task delegation for parallel work |
-| **GitHub** | Source control |
-| **Vercel** | Next.js deployment |
+| **GitHub** | Source control (github.com/ORBWEVA/lola) |
+| **Google Cloud Run** | Production deployment |
 | **n8n.orbweva.cloud** | Workflow hosting |
+
+### Deployment
+
+| Tool | File | Purpose |
+|------|------|---------|
+| `scripts/deploy.sh` | Shell script | One-command deploy via `gcloud run deploy --source .` |
+| `cloudbuild.yaml` | Cloud Build config | CI/CD pipeline: build → push to Artifact Registry → deploy to Cloud Run |
+| `Dockerfile` | Multi-stage | Stage 1: Node.js frontend build. Stage 2: Python backend + dist/ |
+| `.dockerignore` | Exclusions | Prevents .git, node_modules, venv, docs from entering container |
 
 ### Commit Practices
 
