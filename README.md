@@ -6,6 +6,8 @@ Built on the [Gemini Multimodal Live API](https://ai.google.dev/gemini-api/docs/
 
 > Hackathon entry for the [Gemini Live Agent Challenge](https://googledevelopers.devpost.com/) (Live Agents category). Forked from Google's [Immergo](https://github.com/ZackAkil/immersive-language-learning-with-live-api) language learning demo (Apache 2.0).
 
+**[Live Demo](https://lola-bivpadh7zq-uc.a.run.app)** | [Architecture Diagram](docs/lola-architecture.png) | [Blog Post](docs/BLOG_POST.md)
+
 ---
 
 ## The Innovation
@@ -100,7 +102,7 @@ AudioPlayer A ←─ WS A          AudioPlayer B ←─ WS B
 ### Setup
 
 ```bash
-git clone https://github.com/YOUR_ORG/lola.git
+git clone https://github.com/ORBWEVA/lola.git
 cd lola
 
 # Install frontend dependencies
@@ -120,9 +122,10 @@ cp .env.example .env
 
 ```bash
 ./scripts/dev.sh
+# That's it — open http://localhost:5173
 ```
 
-Opens at **http://localhost:5173**. Backend runs on port 8000 (Vite proxies `/api` and `/ws`).
+Three commands to a running app: `git clone` → `cp .env.example .env` (add your key) → `./scripts/dev.sh`. Backend runs on port 8000 (Vite proxies `/api` and `/ws`).
 
 ---
 
@@ -133,7 +136,7 @@ Opens at **http://localhost:5173**. Backend runs on port 8000 (Vite proxies `/ap
 ```bash
 # 1. Authenticate and set project
 gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project your-gcp-project-id  # Replace with your GCP project ID
 
 # 2. Store API key in Secret Manager (once)
 echo -n "YOUR_GEMINI_API_KEY" | gcloud secrets create GEMINI_API_KEY --data-file=-
