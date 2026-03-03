@@ -424,6 +424,7 @@ class ViewLola extends HTMLElement {
         <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; margin-top: 24px;">
           <button id="ob-create" class="ob-start-btn">Create Your Profile</button>
           <button id="ob-demo" class="ob-back-link">Use a Demo Profile</button>
+          <button id="ob-split" class="ob-back-link" style="margin-top: 4px; font-style: italic; opacity: 0.6;">Split-Screen Demo</button>
         </div>
         <button id="ob-back" class="ob-back-link" style="margin-top: 8px;">Back</button>
       </div>
@@ -433,6 +434,11 @@ class ViewLola extends HTMLElement {
     );
     this.querySelector("#ob-demo").addEventListener("click", () =>
       this.showProfilePicker()
+    );
+    this.querySelector("#ob-split").addEventListener("click", () =>
+      this.dispatchEvent(
+        new CustomEvent("navigate", { bubbles: true, detail: { view: "split" } })
+      )
     );
     this.querySelector("#ob-back").addEventListener("click", () =>
       this.dispatchEvent(
