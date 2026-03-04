@@ -1338,7 +1338,9 @@ class ViewLola extends HTMLElement {
       this.client.setSystemInstructions(this._systemInstruction);
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
-      this.client.setVoice("Kore");
+      // Match voice to avatar: Kore (female) for JA/KO profiles, Puck (male) for EN profiles
+      const voice = this._l1 === "en" ? "Puck" : "Kore";
+      this.client.setVoice(voice);
 
       this.client.onReceiveResponse = (response) => {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
