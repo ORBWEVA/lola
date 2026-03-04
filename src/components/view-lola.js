@@ -402,13 +402,32 @@ class ViewLola extends HTMLElement {
     this._frustrationCooldown = 0;
     this._frustrationCount = 0;
     this._frustrationTimer = null;
+    this._transcriptLog = [];
+    this._sessionId = null;
     // Onboarding state
     this._l1 = null;
     this._answers = {};
   }
 
   connectedCallback() {
+    this._initDevice();
     this.showLanding();
+  }
+
+  async _initDevice() {
+    try {
+      const existing = localStorage.getItem("lola_device_id");
+      const res = await fetch("/api/devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: existing || undefined }),
+      });
+      const data = await res.json();
+      localStorage.setItem("lola_device_id", data.device_id);
+      this._deviceCredits = data.credits;
+    } catch (e) {
+      console.warn("Device init failed:", e);
+    }
   }
 
   disconnectedCallback() {
@@ -1567,12 +1586,40 @@ class ViewLola extends HTMLElement {
     `;
 
     // --- Event listeners ---
-    const endSession = () => {
+    const endSession = async () => {
+      const duration = this._sessionStartTime
+        ? Math.floor((Date.now() - this._sessionStartTime) / 1000)
+        : 0;
+      const frustrationCount = this._frustrationCount;
+      const transcriptLog = [...this._transcriptLog];
+      const sessionId = this._sessionId;
+
       this.cleanup();
       this._stopTimer();
+
+      // Report session end
+      let sessionData = null;
+      try {
+        if (sessionId) {
+          const res = await fetch("/api/sessions/end", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: sessionId,
+              duration_seconds: duration,
+              frustration_count: frustrationCount,
+              transcript: transcriptLog,
+            }),
+          });
+          sessionData = await res.json();
+        }
+      } catch (e) {
+        console.warn("Session end report failed:", e);
+      }
+
       this.dispatchEvent(new CustomEvent('navigate', {
         bubbles: true,
-        detail: { view: 'dashboard', profileData: this._activeProfile }
+        detail: { view: 'dashboard', profileData: this._activeProfile, sessionData }
       }));
     };
 
@@ -1695,6 +1742,10 @@ class ViewLola extends HTMLElement {
               response.data.finished
             );
           this.detectFrustration(response.data.text);
+          // Accumulate transcript for persistence
+          if (response.data.finished && response.data.text?.trim()) {
+            this._transcriptLog.push({ role: "user", content: response.data.text.trim() });
+          }
         } else if (
           response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION
         ) {
@@ -1708,6 +1759,10 @@ class ViewLola extends HTMLElement {
           this._updateSpeechBubble(response.data.text, response.data.finished);
           this.detectExpression(response.data.text);
           this.detectSuccess(response.data.text);
+          // Accumulate transcript for persistence
+          if (response.data.finished && response.data.text?.trim()) {
+            this._transcriptLog.push({ role: "model", content: response.data.text.trim() });
+          }
         }
       };
 
@@ -1727,6 +1782,30 @@ class ViewLola extends HTMLElement {
       }
 
       await this.client.connect(token);
+
+      // Report session start to backend
+      this._transcriptLog = [];
+      try {
+        const deviceId = localStorage.getItem("lola_device_id");
+        if (deviceId) {
+          const voice = this._l1 === "en" ? "Puck" : "Kore";
+          const startRes = await fetch("/api/sessions/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              device_id: deviceId,
+              profile_key: this._profileKey || "unknown",
+              profile_label: this._profileLabel || "Unknown",
+              profile_data: this._profile || {},
+              voice,
+            }),
+          });
+          const startData = await startRes.json();
+          this._sessionId = startData.session_id;
+        }
+      } catch (e) {
+        console.warn("Session start report failed:", e);
+      }
 
       this.audioStreamer = new AudioStreamer(this.client);
       await this.audioStreamer.start();

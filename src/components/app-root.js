@@ -96,6 +96,7 @@ class AppRoot extends HTMLElement {
             if (e.detail.mode) this.state.selectedMode = e.detail.mode;
             if (e.detail.result) this.state.sessionResult = e.detail.result;
             if (e.detail.profileData) this.state.profileData = e.detail.profileData;
+            if (e.detail.sessionData) this.state.sessionData = e.detail.sessionData;
             this.render();
         });
     }
@@ -175,6 +176,7 @@ class AppRoot extends HTMLElement {
             case 'dashboard':
                 currentView = document.createElement('view-dashboard');
                 currentView.profileData = this.state.profileData;
+                currentView.sessionData = this.state.sessionData;
                 break;
             case 'summary':
                 currentView = document.createElement('view-summary');

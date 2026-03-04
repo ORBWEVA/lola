@@ -35,6 +35,7 @@ from server.simple_tracker import simpletrack
 from server.config_utils import get_project_id, get_genai_client, get_model_name
 from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D
 from server.instruction_engine import generate_system_instruction, generate_multilingual_instruction, generate_context_update
+from server.db import get_db
 
 
 # Rate Limiting
@@ -191,6 +192,125 @@ async def get_demo_profiles():
             "description": "English speaker learning Japanese — immersive, action-paced",
         },
     }
+
+
+import math
+
+# ─── Persistence Endpoints ────────────────────────────────────────────
+
+@app.post("/api/devices")
+async def register_device(request: Request):
+    """Register or retrieve a device by UUID. Creates with 15 credits if new."""
+    data = await request.json()
+    device_id = data.get("device_id")
+    db = get_db()
+
+    if not db:
+        return {"device_id": device_id or str(uuid.uuid4()), "credits": 15}
+
+    if device_id:
+        result = db.table("devices").select("*").eq("id", device_id).execute()
+        if result.data:
+            return {"device_id": result.data[0]["id"], "credits": result.data[0]["credits"]}
+
+    # Create new device
+    result = db.table("devices").insert({"credits": 15}).execute()
+    row = result.data[0]
+    return {"device_id": row["id"], "credits": row["credits"]}
+
+
+@app.post("/api/sessions/start")
+async def start_session(request: Request):
+    """Create a new session row. Returns session_id."""
+    data = await request.json()
+    db = get_db()
+
+    if not db:
+        return {"session_id": str(uuid.uuid4())}
+
+    row = {
+        "device_id": data["device_id"],
+        "profile_key": data.get("profile_key", "unknown"),
+        "profile_label": data.get("profile_label", "Unknown"),
+        "profile_data": data.get("profile_data", {}),
+        "voice": data.get("voice"),
+    }
+    result = db.table("sessions").insert(row).execute()
+    return {"session_id": result.data[0]["id"]}
+
+
+@app.post("/api/sessions/end")
+async def end_session(request: Request):
+    """End a session: update duration, store transcript, deduct credits."""
+    data = await request.json()
+    session_id = data.get("session_id")
+    duration = data.get("duration_seconds", 0)
+    frustration_count = data.get("frustration_count", 0)
+    transcript = data.get("transcript", [])
+    db = get_db()
+
+    if not db:
+        return {"credits_remaining": 15, "session_summary": {"duration_seconds": duration}}
+
+    # Update session row
+    db.table("sessions").update({
+        "ended_at": "now()",
+        "duration_seconds": duration,
+        "frustration_count": frustration_count,
+    }).eq("id", session_id).execute()
+
+    # Bulk insert transcript entries
+    if transcript:
+        entries = [
+            {"session_id": session_id, "role": t["role"], "content": t["content"], "seq": i}
+            for i, t in enumerate(transcript)
+        ]
+        db.table("transcript_entries").insert(entries).execute()
+
+    # Deduct credits (1 per 60s, rounded up, minimum 1)
+    credits_used = max(1, math.ceil(duration / 60))
+
+    # Get device_id from session
+    session = db.table("sessions").select("device_id").eq("id", session_id).execute()
+    if session.data:
+        device_id = session.data[0]["device_id"]
+        device = db.table("devices").select("credits").eq("id", device_id).execute()
+        if device.data:
+            new_credits = max(0, device.data[0]["credits"] - credits_used)
+            db.table("devices").update({"credits": new_credits}).eq("id", device_id).execute()
+            return {"credits_remaining": new_credits, "session_summary": {"duration_seconds": duration, "credits_used": credits_used}}
+
+    return {"credits_remaining": 0, "session_summary": {"duration_seconds": duration}}
+
+
+@app.get("/api/sessions/{device_id}")
+async def get_sessions(device_id: str):
+    """Return session history for a device (newest first)."""
+    db = get_db()
+
+    if not db:
+        return {"sessions": []}
+
+    result = db.table("sessions").select(
+        "id, profile_key, profile_label, duration_seconds, frustration_count, started_at, ended_at"
+    ).eq("device_id", device_id).order("started_at", desc=True).execute()
+
+    return {"sessions": result.data}
+
+
+@app.get("/api/transcripts/{session_id}")
+async def get_transcripts(session_id: str):
+    """Return transcript entries for a session, ordered by seq."""
+    db = get_db()
+
+    if not db:
+        return {"entries": []}
+
+    result = db.table("transcript_entries").select(
+        "role, content, seq"
+    ).eq("session_id", session_id).order("seq").execute()
+
+    return {"entries": result.data}
 
 
 @app.get("/{full_path:path}")
