@@ -14,6 +14,10 @@ Same mistake. Two completely different coaching responses. Two different Gemini 
 
 That is LoLA.
 
+<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
+![Split-screen demo: two coaches respond differently to the same mistake](../lola-remotion-splitscreen.png)
+*Same mic input, two Gemini sessions, two visibly different coaching responses.*
+
 ---
 
 ## The Problem Nobody Talks About
@@ -29,6 +33,9 @@ A shy, analytical learner who needs to understand grammar rules before they will
 That is tutoring. Tutoring delivers content. Coaching adapts to the human.
 
 Most AI language products are tutors wearing a coaching hat. They have one correction style, one pacing model, one emotional register. They might adjust difficulty, but they never adjust *how* they teach. LoLA -- Loka Learning Avatar -- was built to close that gap.
+
+<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
+![LoLA landing page](../lola-rebrand-landing.png)
 
 ## A 30-Second Onboarding That Changes Everything
 
@@ -63,6 +70,10 @@ ANSWER_MAP = {
 ```
 
 Simple. Deterministic. No LLM call required for profiling. The profile is a plain Python dictionary -- portable, inspectable, and reproducible.
+
+<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
+![5-question onboarding flow](../lola-remotion-onboarding.png)
+*Five personality questions in the learner's native language generate a unique coaching profile.*
 
 ## 12 Principles, Weighted Per Learner
 
@@ -257,6 +268,10 @@ Dropping to 0.7 gave consistent instruction following. The Analyst stayed analyt
 Real-time PCM streaming at 16kHz through AudioWorklets requires careful attention to buffer sizes, sample rate matching, and worklet processor lifecycle management. The worklet runs on a separate thread with no access to the DOM or most browser APIs. Debugging is limited to `console.log` in a context where the console itself is not always visible.
 
 Get the buffer size wrong and you get clicks and pops. Get the sample rate wrong and the audio sounds like a chipmunk or a whale. Get the lifecycle wrong and the worklet dies silently mid-session. Each of these happened. Each was resolved through patience and careful logging.
+
+<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
+![LoLA architecture diagram](lola-architecture.png)
+*Browser → Cloud Run → Gemini 2.5 Flash Native Audio*
 
 ## Architecture: One Command to Deploy
 
