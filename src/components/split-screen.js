@@ -23,8 +23,8 @@ const VOICE_RIGHT = "Aoede"; // The Explorer — warm, expressive
 class SplitScreen extends HTMLElement {
   constructor() {
     super();
-    this.left = { client: null, audioPlayer: null, outputBuffer: "" };
-    this.right = { client: null, audioPlayer: null, outputBuffer: "" };
+    this.left = { client: null, audioPlayer: null, outputBuffer: "", inputBuffer: "", frustrationCooldown: 0, frustrationCount: 0, frustrationTimer: null };
+    this.right = { client: null, audioPlayer: null, outputBuffer: "", inputBuffer: "", frustrationCooldown: 0, frustrationCount: 0, frustrationTimer: null };
     // Shared mic state
     this._micCtx = null;
     this._micWorklet = null;
@@ -118,6 +118,10 @@ class SplitScreen extends HTMLElement {
         }
         .ss-panel.listening {
           border-color: var(--lola-indigo, #4361ee);
+        }
+        .ss-panel.frustration-active {
+          box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+          transition: box-shadow 0.5s ease;
         }
         .ss-listen-badge {
           position: absolute;
@@ -525,6 +529,7 @@ class SplitScreen extends HTMLElement {
             response.data.text,
             response.data.finished
           );
+        this.detectFrustration(side, response.data.text);
       } else if (
         response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION
       ) {
@@ -535,6 +540,7 @@ class SplitScreen extends HTMLElement {
             response.data.finished
           );
         this.detectExpression(side, response.data.text);
+        this.detectSuccess(side, response.data.text);
       }
     };
 
@@ -556,6 +562,83 @@ class SplitScreen extends HTMLElement {
       if (carousel) carousel.setExpression(detected);
       state.outputBuffer = "";
     }
+  }
+
+  // ── Frustration / Success Detection ──────────────────────────────
+
+  detectFrustration(side, text) {
+    const state = this[side];
+    state.inputBuffer += " " + text;
+    if (state.inputBuffer.length > 300) {
+      state.inputBuffer = state.inputBuffer.slice(-300);
+    }
+    const lower = state.inputBuffer.toLowerCase();
+
+    const frustrationPhrases = [
+      "i don't understand", "i dont understand", "this is hard",
+      "i give up", "i can't", "i cant", "confused", "ugh", "argh",
+      "too difficult", "makes no sense", "what does that mean",
+    ];
+    const jaFrustration = ["わからない", "難しい", "むずかしい", "もう一回", "できない"];
+
+    const hasExplicit = frustrationPhrases.some((p) => lower.includes(p));
+    const hasJa = jaFrustration.some((p) => state.inputBuffer.includes(p));
+    const hesitationCount = (lower.match(/\b(um|uh|erm|えーと|えー)\b/g) || []).length;
+    const hasHesitation = hesitationCount >= 3;
+
+    if (!(hasExplicit || hasJa || hasHesitation)) return;
+
+    const now = Date.now();
+    if (now - state.frustrationCooldown < 30000) return;
+    state.frustrationCooldown = now;
+    state.frustrationCount++;
+
+    const carousel = this.querySelector(`#carousel-${side}`);
+    if (carousel) carousel.setExpression("concerned");
+
+    let details = "";
+    if (state.frustrationCount >= 3) {
+      details = "Learner is persistently struggling. Consider simplifying significantly or switching approach.";
+    }
+
+    if (state.client) {
+      state.client.sendContextUpdate("frustration", details);
+    }
+
+    this.showFrustrationIndicator(side);
+    state.inputBuffer = "";
+  }
+
+  detectSuccess(side, text) {
+    const state = this[side];
+    const lower = (text || "").toLowerCase();
+    const successPhrases = [
+      "correct", "great job", "well done", "perfect", "excellent",
+      "that's right", "thats right", "nice work", "good job",
+    ];
+    const jaSuccess = ["すごい", "上手", "正解", "よくできました"];
+
+    const has = successPhrases.some((p) => lower.includes(p))
+      || jaSuccess.some((p) => text.includes(p));
+    if (!has) return;
+
+    state.frustrationCount = 0;
+    if (state.client) {
+      state.client.sendContextUpdate("success");
+    }
+    const carousel = this.querySelector(`#carousel-${side}`);
+    if (carousel) carousel.setExpression("happy");
+  }
+
+  showFrustrationIndicator(side) {
+    const panel = this.querySelector(`#panel-${side}`);
+    if (!panel) return;
+    panel.classList.add("frustration-active");
+    const state = this[side];
+    if (state.frustrationTimer) clearTimeout(state.frustrationTimer);
+    state.frustrationTimer = setTimeout(() => {
+      panel.classList.remove("frustration-active");
+    }, 10000);
   }
 
   // ── Shared Microphone ─────────────────────────────────────────────
@@ -746,6 +829,10 @@ class SplitScreen extends HTMLElement {
         side.audioPlayer = null;
       }
       side.outputBuffer = "";
+      side.inputBuffer = "";
+      side.frustrationCooldown = 0;
+      side.frustrationCount = 0;
+      if (side.frustrationTimer) clearTimeout(side.frustrationTimer);
     }
 
     // Visualizers
