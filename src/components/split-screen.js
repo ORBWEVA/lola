@@ -17,8 +17,8 @@ import { AudioPlayer } from "../lib/gemini-live/mediaUtils.js";
 import { ExpressionCarousel } from "./expression-carousel.js";
 
 // Distinct voices so judges can hear the personality difference
-const VOICE_LEFT = "Kore"; // The Analyst — calm, measured
-const VOICE_RIGHT = "Aoede"; // The Explorer — warm, expressive
+const VOICE_LEFT = "Kore"; // The Analyst — calm, measured (female)
+const VOICE_RIGHT = "Puck"; // The Explorer — warm, expressive (male)
 
 class SplitScreen extends HTMLElement {
   constructor() {
