@@ -451,6 +451,16 @@ export class GeminiLiveAPI {
     return this.totalBytesSent;
   }
 
+  sendContextUpdate(contextType, details = "") {
+    if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+      this.webSocket.send(JSON.stringify({
+        type: "context_update",
+        context_type: contextType,
+        details: details,
+      }));
+    }
+  }
+
   sendAudioMessage(pcmData) {
     // Send binary audio data directly
     if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {

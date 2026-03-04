@@ -398,6 +398,10 @@ class ViewLola extends HTMLElement {
     this.videoStreamer = null;
     this.cameraActive = false;
     this._outputBuffer = "";
+    this._inputBuffer = "";
+    this._frustrationCooldown = 0;
+    this._frustrationCount = 0;
+    this._frustrationTimer = null;
     // Onboarding state
     this._l1 = null;
     this._answers = {};
@@ -1260,6 +1264,10 @@ class ViewLola extends HTMLElement {
           background: var(--color-surface);
           border: 1px solid var(--glass-border);
         }
+        .frustration-active {
+          box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+          transition: box-shadow 0.5s ease;
+        }
       </style>
 
       <div class="lola-session">
@@ -1369,6 +1377,7 @@ class ViewLola extends HTMLElement {
               response.data.text,
               response.data.finished
             );
+          this.detectFrustration(response.data.text);
         } else if (
           response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION
         ) {
@@ -1379,6 +1388,7 @@ class ViewLola extends HTMLElement {
               response.data.finished
             );
           this.detectExpression(response.data.text);
+          this.detectSuccess(response.data.text);
         }
       };
 
@@ -1454,6 +1464,82 @@ class ViewLola extends HTMLElement {
     }
   }
 
+  // ─── Frustration Detection ──────────────────────────────────────
+
+  detectFrustration(text) {
+    this._inputBuffer += " " + text;
+    if (this._inputBuffer.length > 300) {
+      this._inputBuffer = this._inputBuffer.slice(-300);
+    }
+    const lower = this._inputBuffer.toLowerCase();
+
+    const frustrationPhrases = [
+      "i don't understand", "i dont understand", "this is hard",
+      "i give up", "i can't", "i cant", "confused", "ugh", "argh",
+      "too difficult", "makes no sense", "what does that mean",
+    ];
+    const jaFrustration = ["わからない", "難しい", "むずかしい", "もう一回", "できない"];
+
+    const hasExplicit = frustrationPhrases.some((p) => lower.includes(p));
+    const hasJa = jaFrustration.some((p) => this._inputBuffer.includes(p));
+
+    // Hesitation: 3+ "um"/"uh" in buffer
+    const hesitationCount = (lower.match(/\b(um|uh|erm|えーと|えー)\b/g) || []).length;
+    const hasHesitation = hesitationCount >= 3;
+
+    if (!(hasExplicit || hasJa || hasHesitation)) return;
+
+    const now = Date.now();
+    if (now - this._frustrationCooldown < 30000) return;
+    this._frustrationCooldown = now;
+    this._frustrationCount++;
+
+    const carousel = this.querySelector("#lola-carousel");
+    if (carousel) carousel.setExpression("concerned");
+
+    let details = "";
+    if (this._frustrationCount >= 3) {
+      details = "Learner is persistently struggling. Consider simplifying significantly or switching approach.";
+    }
+
+    if (this.client) {
+      this.client.sendContextUpdate("frustration", details);
+    }
+
+    this.showFrustrationIndicator();
+    this._inputBuffer = "";
+  }
+
+  detectSuccess(text) {
+    const lower = (text || "").toLowerCase();
+    const successPhrases = [
+      "correct", "great job", "well done", "perfect", "excellent",
+      "that's right", "thats right", "nice work", "good job",
+    ];
+    const jaSuccess = ["すごい", "上手", "正解", "よくできました"];
+
+    const has = successPhrases.some((p) => lower.includes(p))
+      || jaSuccess.some((p) => text.includes(p));
+    if (!has) return;
+
+    this._frustrationCount = 0;
+    if (this.client) {
+      this.client.sendContextUpdate("success");
+    }
+    const carousel = this.querySelector("#lola-carousel");
+    if (carousel) carousel.setExpression("happy");
+  }
+
+  showFrustrationIndicator() {
+    const wrapper = this.querySelector("#lola-carousel");
+    if (!wrapper) return;
+    wrapper.classList.add("frustration-active");
+    if (this._frustrationTimer) clearTimeout(this._frustrationTimer);
+    this._frustrationTimer = setTimeout(() => {
+      wrapper.classList.remove("frustration-active");
+    }, 10000);
+  }
+
   // ─── Camera ──────────────────────────────────────────────────────
 
   async toggleCamera() {
@@ -1523,6 +1609,10 @@ class ViewLola extends HTMLElement {
     const avatarViz = this.querySelector("#avatar-viz");
     if (avatarViz?.disconnect) avatarViz.disconnect();
     this._outputBuffer = "";
+    this._inputBuffer = "";
+    this._frustrationCooldown = 0;
+    this._frustrationCount = 0;
+    if (this._frustrationTimer) clearTimeout(this._frustrationTimer);
     this.sessionActive = false;
     this.cameraActive = false;
   }

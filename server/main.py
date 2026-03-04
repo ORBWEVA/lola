@@ -322,9 +322,16 @@ async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = None):
                              # The SDK JS sends 'realtime_input' for generic media chunks
                              # For now we handle simpler case or adapt GeminiLive class
                              pass
+                        elif isinstance(payload, dict) and payload.get("type") == "context_update":
+                            context_type = payload.get("context_type", "")
+                            details = payload.get("details", "")
+                            update_text = generate_context_update(context_type, details)
+                            if update_text:
+                                await text_input_queue.put(update_text)
+                            continue
                     except json.JSONDecodeError:
                         pass
-                    
+
                     await text_input_queue.put(text)
         except WebSocketDisconnect:
             logger.info("WebSocket disconnected")

@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v1.9 — 2026-03-04)
+# LoLA — Loka Learning Avatar Master Reference (v2.0 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.0 | 2026-03-05T04:00:00Z | Claude Code (Opus 4.6) | Frustration detection + mid-session context updates. Frontend scans input transcription for frustration signals (explicit phrases, hesitation, Japanese markers) with 30s cooldown and escalation. Success detection on output transcription resets frustration state. Backend routes `context_update` messages through existing text pipeline to Gemini as sendClientContent(). Subtle amber glow UI indicator on avatar during frustration mode. Added `sendContextUpdate()` to GeminiLiveAPI. |
 | 1.9 | 2026-03-05T02:00:00Z | Claude Code (Opus 4.6) | Added IaC bonus documentation to README (cloudbuild.yaml trigger setup, deploy.sh, Dockerfile). Created Educator Creator Platform mock (`src/components/view-educator.js`) — glassmorphism cards, stats mockup, Q2 2026 badge, routed from landing. Created Devpost submission checklist (`docs/DEVPOST_SUBMISSION_CHECKLIST.md`). |
 | 1.8 | 2026-03-05T00:30:00Z | Claude Code (Opus 4.6) | Added hackathon submission deliverables: Devpost text description (`docs/DEVPOST_DESCRIPTION.md`, ~2000 words, all required sections + third-party disclosure), blog post for +0.6 bonus (`docs/BLOG_POST.md`, ~2650 words with mandatory disclosure + hashtag), polished README (ORBWEVA org, live demo link, judge-friendly Quick Start). Updated §7 submission checklist. |
 | 1.7 | 2026-03-04T23:30:00Z | Claude Code (Opus 4.6) | Added Remotion demo video scaffold at `video/`. 8 compositions: branded intro/outro, problem statement, architecture overlay with animated callouts, multi-domain vision montage, 3 screen capture placeholders with narration markers and lower-third overlays. Uses LoLA Brand Guide tokens (Exo 2 + Space Mono fonts, indigo/rose/sky palette). Total 6450 frames = 3:35 @ 30fps, under 4:00 limit. Ryno records screen captures separately. |
@@ -878,8 +879,8 @@ lola/
 |-------|----------|-------|
 | Lip sync is volume-based, not phoneme-based | Medium | AnalyserNode maps overall volume to mouth openness. Not true viseme detection. Acceptable for demo but not production quality. |
 | Avatar model is generic RPM | Low | Single default avatar. Spec calls for 2 distinct coaches (analyst vs explorer). |
-| `enable_affective_dialog` not available on native audio | High (spec gap) | Original spec relies on affective dialog for emotion detection. Native audio models don't support it. Need alternative approach or model change. |
-| `sendClientContent()` mid-session updates not tested | Medium | Core differentiator from spec — needs validation with native audio model. |
+| `enable_affective_dialog` not available on native audio | Mitigated (v2.0) | Original spec relies on affective dialog for emotion detection. Native audio models don't support it. Replaced with frontend frustration detection scanning input transcription for signals (explicit phrases, hesitation patterns, Japanese frustration markers). |
+| `sendClientContent()` mid-session updates | Resolved (v2.0) | Implemented via `context_update` message type routed through text_input_queue → session.send(). Frustration detection triggers context updates. Tested in dev. |
 | Vision (camera) not fully wired in frontend | Medium | Backend supports video input queue; frontend camera capture UI not connected to LoLA view. |
 | 5-question onboarding not built | Low (demo) | Using 4 pre-built demo profiles. Full onboarding is Phase 2. |
 | No session persistence | Low | Each session starts fresh. No cross-session memory. |
