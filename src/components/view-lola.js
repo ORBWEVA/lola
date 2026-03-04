@@ -1141,212 +1141,523 @@ class ViewLola extends HTMLElement {
   // ─── Session View ────────────────────────────────────────────────
 
   async showSession() {
+    this._sessionStartTime = null;
+    this._timerInterval = null;
+    this._burgerOpen = false;
+
     this.innerHTML = `
       <style>
-        .lola-session {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-height: 100vh;
-          padding: 16px;
-          gap: 12px;
+        /* ─── Session Root: full-screen immersive ─── */
+        .session-root {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          background: var(--lola-bg, #0a0a1a);
+          overflow: hidden;
         }
-        .lola-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-          max-width: 600px;
-        }
-        .lola-avatar-wrap {
-          width: 100%;
-          max-width: 420px;
-          position: relative;
-        }
-        .lola-camera-preview {
+
+        /* ─── Avatar layer (fills viewport) ─── */
+        .session-avatar {
           position: absolute;
-          bottom: 12px;
-          right: 12px;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+        }
+        .session-avatar expression-carousel {
+          width: 100%;
+          height: 100%;
+        }
+
+        /* Gradient overlay for readability */
+        .session-gradient {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(transparent 40%, rgba(10,10,26,0.85) 100%);
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        /* ─── Top bar (glass) ─── */
+        .session-topbar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          padding-top: calc(12px + env(safe-area-inset-top));
+          background: rgba(10,10,26,0.5);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .topbar-left, .topbar-center, .topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .topbar-left { flex: 0 0 auto; }
+        .topbar-center { flex: 1; justify-content: center; }
+        .topbar-right { flex: 0 0 auto; }
+
+        .burger-btn {
+          background: none;
+          border: none;
+          color: var(--color-text-main, #fff);
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 6px;
+          transition: background 0.2s;
+        }
+        .burger-btn:hover { background: rgba(255,255,255,0.1); }
+
+        .profile-badge {
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: var(--radius-full, 99px);
+          background: rgba(255,255,255,0.1);
+          color: var(--color-text-main, #fff);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .timer-pill {
+          font-size: 0.75rem;
+          font-weight: 700;
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          padding: 4px 12px;
+          border-radius: var(--radius-full, 99px);
+          background: rgba(255,255,255,0.1);
+          color: var(--color-text-main, #fff);
+          letter-spacing: 0.05em;
+        }
+
+        /* ─── Burger menu dropdown ─── */
+        .burger-menu {
+          position: absolute;
+          top: 100%;
+          left: 16px;
+          background: rgba(20,20,40,0.95);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: var(--radius-md, 12px);
+          padding: 8px 0;
+          min-width: 200px;
+          box-shadow: var(--shadow-lg);
+          display: none;
+          z-index: 20;
+        }
+        .burger-menu.open { display: block; }
+        .burger-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 12px 16px;
+          background: none;
+          border: none;
+          color: var(--color-text-main, #fff);
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: background 0.2s;
+          text-align: left;
+        }
+        .burger-menu-item:hover { background: rgba(255,255,255,0.08); }
+        .burger-menu-item.danger { color: var(--lola-error, #ef476f); }
+        .burger-menu-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          color: var(--color-text-sub, #9595b0);
+          font-size: 0.8rem;
+        }
+
+        /* ─── Speech bubble (mobile) ─── */
+        .session-speech {
+          position: absolute;
+          bottom: 80px;
+          left: 16px;
+          right: 16px;
+          z-index: 5;
+          background: rgba(20,20,40,0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: var(--radius-lg, 16px);
+          padding: 14px 18px;
+          max-height: 160px;
+          overflow-y: auto;
+        }
+        .speech-coach-name {
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--lola-indigo, #4361ee);
+          margin-bottom: 6px;
+        }
+        .speech-text {
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: var(--color-text-main, #fff);
+        }
+        .speech-text:empty::after {
+          content: 'Listening...';
+          color: var(--color-text-sub, #9595b0);
+          font-style: italic;
+        }
+
+        /* ─── Waveform bar (bottom) ─── */
+        .session-waveform-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 16px;
+          padding-bottom: calc(10px + env(safe-area-inset-bottom));
+          background: rgba(10,10,26,0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .wf-bar-track {
+          flex: 1;
+          height: 32px;
+          display: flex;
+          align-items: center;
+        }
+        .wf-bar-track audio-visualizer {
+          width: 100%;
+          height: 100%;
+        }
+        .mic-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: var(--lola-sky, #4cc9f0);
+          flex-shrink: 0;
+          animation: mic-pulse 1.5s ease-in-out infinite;
+        }
+        .mic-dot.inactive { background: var(--color-text-sub, #9595b0); animation: none; }
+        @keyframes mic-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.85); }
+        }
+        .session-status {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--color-text-sub, #9595b0);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        /* ─── Camera PIP ─── */
+        .session-camera-pip {
+          position: absolute;
+          bottom: 90px;
+          right: 16px;
           width: 100px;
           height: 75px;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
-          border: 2px solid rgba(255,255,255,0.25);
-          z-index: 5;
+          border: 2px solid rgba(255,255,255,0.2);
+          z-index: 6;
           display: none;
+          box-shadow: var(--shadow-md);
         }
-        .lola-camera-preview video {
+        .session-camera-pip video {
           width: 100%;
           height: 100%;
           object-fit: cover;
           transform: scaleX(-1);
         }
-        .lola-waveforms {
-          display: flex;
-          gap: 16px;
-          width: 100%;
-          max-width: 600px;
-          height: 56px;
+
+        /* ─── Frustration glow ─── */
+        .frustration-active .session-avatar {
+          box-shadow: inset 0 0 60px rgba(245, 158, 11, 0.3);
         }
-        .wf-track {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: var(--color-surface);
-          border: var(--glass-border);
-          border-radius: var(--radius-sm);
-          padding: 0 12px;
-          overflow: hidden;
+
+        /* ═══ Desktop: Side-by-Side (768px+) ═══ */
+        @media (min-width: 768px) {
+          .session-root {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+          }
+
+          /* Left column: avatar + waveform */
+          .session-left {
+            position: relative;
+            overflow: hidden;
+          }
+          .session-avatar { position: absolute; inset: 0; }
+          .session-gradient {
+            background: linear-gradient(transparent 50%, rgba(10,10,26,0.6) 100%);
+          }
+
+          /* Right column: header + transcript + controls */
+          .session-right {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: var(--lola-bg, #0a0a1a);
+            border-left: 1px solid rgba(255,255,255,0.08);
+          }
+          .session-right-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+          }
+          .session-right-transcript {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+          }
+          .session-right-transcript live-transcript {
+            position: relative;
+            height: 100%;
+          }
+          .session-right-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+          }
+          .desktop-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-full, 99px);
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+          }
+          .desktop-btn:hover { filter: brightness(1.1); }
+          .desktop-end-btn {
+            background: var(--lola-error, #ef476f);
+            color: white;
+          }
+          .desktop-cam-btn {
+            background: transparent;
+            color: var(--color-text-sub, #9595b0);
+            border: 1px solid rgba(255,255,255,0.12);
+          }
+          .desktop-cam-btn.active {
+            background: var(--lola-sky, #4cc9f0);
+            color: white;
+            border-color: var(--lola-sky, #4cc9f0);
+          }
+
+          /* Hide mobile-only elements on desktop */
+          .session-topbar { display: none; }
+          .session-speech { display: none; }
+          .session-waveform-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            background: rgba(10,10,26,0.5);
+          }
+
+          /* Desktop waveform on the left panel */
+          .session-camera-pip {
+            bottom: 60px;
+            right: 16px;
+          }
         }
-        .wf-label {
-          font-size: 0.65rem;
-          font-family: var(--font-mono, 'Space Mono', monospace);
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .wf-label.lola { color: var(--lola-indigo, #4361ee); }
-        .wf-label.you { color: var(--lola-sky, #4cc9f0); }
-        .wf-track audio-visualizer {
-          flex: 1;
-          height: 100%;
-        }
-        .lola-controls {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-        }
-        .lola-btn {
-          padding: 14px 32px;
-          border-radius: var(--radius-full);
-          border: none;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 1rem;
-        }
-        .lola-btn-primary {
-          background: var(--lola-indigo, #4361ee);
-          color: white;
-        }
-        .lola-btn-primary.active {
-          background: var(--lola-error, #ef476f);
-        }
-        .lola-btn-secondary {
-          background: transparent;
-          color: var(--lola-text-secondary, #9595b0);
-          border: 1px solid var(--lola-surface-3, #22224a);
-        }
-        .lola-btn-secondary.active {
-          background: var(--lola-sky, #4cc9f0);
-          color: white;
-          border-color: var(--lola-sky, #4cc9f0);
-        }
-        .lola-btn:hover {
-          transform: translateY(-2px);
-          filter: brightness(1.1);
-        }
-        .lola-status {
-          font-size: 0.85rem;
-          font-weight: 600;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          height: 1.2em;
-        }
-        .lola-profile-badge {
-          font-size: 0.8rem;
-          font-weight: 700;
-          padding: 4px 12px;
-          border-radius: var(--radius-full);
-          background: var(--color-surface);
-          border: 1px solid var(--glass-border);
-        }
-        .frustration-active {
-          box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
-          transition: box-shadow 0.5s ease;
+
+        /* Hide desktop-only elements on mobile */
+        @media (max-width: 767px) {
+          .session-right { display: none; }
         }
       </style>
 
-      <div class="lola-session">
-        <div class="lola-header">
-          <button id="lola-back" style="background: transparent; border: none; cursor: pointer; padding: 8px; opacity: 0.7; color: var(--color-text-main);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          </button>
-          <span class="lola-profile-badge">${this._profileLabel}</span>
-          <span class="lola-status" id="lola-status">Ready</span>
-        </div>
-
-        <div class="lola-avatar-wrap">
-          <expression-carousel id="lola-carousel"></expression-carousel>
-          <div id="lola-camera-preview" class="lola-camera-preview"></div>
-        </div>
-
-        <div class="lola-waveforms">
-          <div class="wf-track">
-            <span class="wf-label lola">LoLA</span>
-            <audio-visualizer id="avatar-viz" color="#4361ee"></audio-visualizer>
+      <div class="session-root" id="session-root">
+        <!-- Left / Full-screen: Avatar -->
+        <div class="session-left">
+          <div class="session-avatar">
+            <expression-carousel id="lola-carousel" fullbleed></expression-carousel>
           </div>
-          <div class="wf-track">
-            <span class="wf-label you">You</span>
-            <audio-visualizer id="user-viz" color="#4cc9f0"></audio-visualizer>
+          <div class="session-gradient"></div>
+
+          <!-- Mobile: Top bar -->
+          <div class="session-topbar">
+            <div class="topbar-left">
+              <button class="burger-btn" id="burger-btn">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+              <div class="burger-menu" id="burger-menu">
+                <button class="burger-menu-item danger" id="menu-end-session">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                  End Session
+                </button>
+                <button class="burger-menu-item" id="menu-camera-toggle">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                  <span id="menu-camera-label">Camera On</span>
+                </button>
+                <div class="burger-menu-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+                  ${this._profileLabel}
+                </div>
+              </div>
+            </div>
+            <div class="topbar-center">
+              <span class="profile-badge">${this._profileLabel}</span>
+            </div>
+            <div class="topbar-right">
+              <span class="timer-pill" id="session-timer">0:00</span>
+            </div>
           </div>
+
+          <!-- Mobile: Speech bubble -->
+          <div class="session-speech" id="session-speech">
+            <div class="speech-coach-name">LoLA</div>
+            <div class="speech-text" id="speech-text"></div>
+          </div>
+
+          <!-- Waveform bar (bottom of left/avatar area) -->
+          <div class="session-waveform-bar">
+            <div class="wf-bar-track">
+              <audio-visualizer id="avatar-viz" color="#4361ee"></audio-visualizer>
+            </div>
+            <div class="mic-dot" id="mic-dot"></div>
+            <span class="session-status" id="session-status">Connecting...</span>
+          </div>
+
+          <!-- Camera PIP -->
+          <div class="session-camera-pip" id="lola-camera-preview"></div>
         </div>
 
-        <div style="width: 100%; max-width: 600px; height: 200px; position: relative;">
-          <live-transcript></live-transcript>
-        </div>
-
-        <div class="lola-controls">
-          <button id="lola-start" class="lola-btn lola-btn-primary">Start Session</button>
-          <button id="lola-camera" class="lola-btn lola-btn-secondary">Camera</button>
+        <!-- Right: Desktop transcript panel -->
+        <div class="session-right">
+          <div class="session-right-header">
+            <button class="burger-btn" id="desktop-back" title="End session">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <span class="profile-badge">${this._profileLabel}</span>
+            <span style="flex:1"></span>
+            <span class="timer-pill" id="desktop-timer">0:00</span>
+          </div>
+          <div class="session-right-transcript">
+            <live-transcript id="desktop-transcript"></live-transcript>
+          </div>
+          <div class="session-right-controls">
+            <button class="desktop-btn desktop-end-btn" id="desktop-end">End Session</button>
+            <button class="desktop-btn desktop-cam-btn" id="desktop-camera">Camera</button>
+            <span style="flex:1"></span>
+            <audio-visualizer id="user-viz" color="#4cc9f0" style="width: 120px; height: 28px;"></audio-visualizer>
+          </div>
         </div>
       </div>
     `;
 
-    this.querySelector("#lola-back").addEventListener("click", () => {
+    // --- Event listeners ---
+    const endSession = () => {
       this.cleanup();
+      this._stopTimer();
       this.showLanding();
-    });
-    this.querySelector("#lola-start").addEventListener("click", () =>
-      this.toggleSession()
-    );
-    this.querySelector("#lola-camera").addEventListener("click", () =>
-      this.toggleCamera()
-    );
+    };
 
+    // Burger menu
+    this.querySelector("#burger-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      this._burgerOpen = !this._burgerOpen;
+      this.querySelector("#burger-menu").classList.toggle("open", this._burgerOpen);
+    });
+    document.addEventListener("click", this._closeBurger = () => {
+      if (this._burgerOpen) {
+        this._burgerOpen = false;
+        const m = this.querySelector("#burger-menu");
+        if (m) m.classList.remove("open");
+      }
+    });
+    this.querySelector("#menu-end-session").addEventListener("click", endSession);
+    this.querySelector("#menu-camera-toggle").addEventListener("click", () => this.toggleCamera());
+
+    // Desktop controls
+    this.querySelector("#desktop-back").addEventListener("click", endSession);
+    this.querySelector("#desktop-end").addEventListener("click", endSession);
+    this.querySelector("#desktop-camera").addEventListener("click", () => this.toggleCamera());
+
+    // Load avatar
     const carousel = this.querySelector("#lola-carousel");
     carousel.setProfile(this._profileKey);
+
+    // Auto-start session
+    await this.toggleSession();
   }
 
   // ─── Session Control ─────────────────────────────────────────────
 
-  async toggleSession() {
-    const btn = this.querySelector("#lola-start");
-    const status = this.querySelector("#lola-status");
-    if (!btn) return;
+  _setStatus(text) {
+    const s = this.querySelector("#session-status");
+    if (s) s.textContent = text;
+  }
 
+  _startTimer() {
+    this._sessionStartTime = Date.now();
+    const update = () => {
+      const elapsed = Math.floor((Date.now() - this._sessionStartTime) / 1000);
+      const m = Math.floor(elapsed / 60);
+      const s = String(elapsed % 60).padStart(2, "0");
+      const display = `${m}:${s}`;
+      const t1 = this.querySelector("#session-timer");
+      const t2 = this.querySelector("#desktop-timer");
+      if (t1) t1.textContent = display;
+      if (t2) t2.textContent = display;
+    };
+    update();
+    this._timerInterval = setInterval(update, 1000);
+  }
+
+  _stopTimer() {
+    if (this._timerInterval) {
+      clearInterval(this._timerInterval);
+      this._timerInterval = null;
+    }
+  }
+
+  _updateSpeechBubble(text, finished) {
+    const el = this.querySelector("#speech-text");
+    if (!el) return;
+    if (finished) {
+      el.textContent = text;
+    } else {
+      el.textContent = (el.textContent || "") + text;
+    }
+    // Auto-scroll
+    const bubble = this.querySelector("#session-speech");
+    if (bubble) bubble.scrollTop = bubble.scrollHeight;
+  }
+
+  async toggleSession() {
     if (this.sessionActive) {
       this.cleanup();
-      btn.textContent = "Start Session";
-      btn.classList.remove("active");
-      status.textContent = "Session ended";
+      this._stopTimer();
+      this._setStatus("Session ended");
       return;
     }
 
-    btn.textContent = "End Session";
-    btn.classList.add("active");
-    status.textContent = "Connecting...";
-    status.style.color = "var(--color-text-sub)";
+    this._setStatus("Connecting...");
 
     try {
       this.client = new GeminiLiveAPI();
       this.client.setSystemInstructions(this._systemInstruction);
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
-      // Match voice to avatar: Kore (female) for JA/KO profiles, Puck (male) for EN profiles
       const voice = this._l1 === "en" ? "Puck" : "Kore";
       this.client.setVoice(voice);
 
@@ -1359,7 +1670,8 @@ class ViewLola extends HTMLElement {
           const carousel = this.querySelector("#lola-carousel");
           if (carousel) carousel.setExpression("neutral");
           this._outputBuffer = "";
-          const transcript = this.querySelector("live-transcript");
+          // Desktop transcript
+          const transcript = this.querySelector("#desktop-transcript") || this.querySelector("live-transcript");
           if (transcript) transcript.finalizeAll();
         } else if (
           response.type === MultimodalLiveResponseType.INTERRUPTED
@@ -1371,7 +1683,7 @@ class ViewLola extends HTMLElement {
         } else if (
           response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION
         ) {
-          const transcript = this.querySelector("live-transcript");
+          const transcript = this.querySelector("#desktop-transcript") || this.querySelector("live-transcript");
           if (transcript)
             transcript.addInputTranscript(
               response.data.text,
@@ -1381,12 +1693,14 @@ class ViewLola extends HTMLElement {
         } else if (
           response.type === MultimodalLiveResponseType.OUTPUT_TRANSCRIPTION
         ) {
-          const transcript = this.querySelector("live-transcript");
+          const transcript = this.querySelector("#desktop-transcript") || this.querySelector("live-transcript");
           if (transcript)
             transcript.addOutputTranscript(
               response.data.text,
               response.data.finished
             );
+          // Update mobile speech bubble
+          this._updateSpeechBubble(response.data.text, response.data.finished);
           this.detectExpression(response.data.text);
           this.detectSuccess(response.data.text);
         }
@@ -1394,8 +1708,10 @@ class ViewLola extends HTMLElement {
 
       this.client.onError = (e) => console.error("Gemini error:", e);
       this.client.onClose = () => {
-        status.textContent = "Disconnected";
+        this._setStatus("Disconnected");
         this.sessionActive = false;
+        const dot = this.querySelector("#mic-dot");
+        if (dot) dot.classList.add("inactive");
       };
 
       let token = null;
@@ -1434,14 +1750,11 @@ class ViewLola extends HTMLElement {
       }
 
       this.sessionActive = true;
-      status.textContent = "Connected \u2014 speak to LoLA";
-      status.style.color = "#4CAF50";
+      this._setStatus("Speak to LoLA");
+      this._startTimer();
     } catch (e) {
       console.error("Session start failed:", e);
-      status.textContent = "Connection failed: " + e.message;
-      status.style.color = "var(--color-danger, #e74c3c)";
-      btn.textContent = "Start Session";
-      btn.classList.remove("active");
+      this._setStatus("Failed: " + e.message);
     }
   }
 
@@ -1531,27 +1844,28 @@ class ViewLola extends HTMLElement {
   }
 
   showFrustrationIndicator() {
-    const wrapper = this.querySelector("#lola-carousel");
-    if (!wrapper) return;
-    wrapper.classList.add("frustration-active");
+    const root = this.querySelector("#session-root");
+    if (!root) return;
+    root.classList.add("frustration-active");
     if (this._frustrationTimer) clearTimeout(this._frustrationTimer);
     this._frustrationTimer = setTimeout(() => {
-      wrapper.classList.remove("frustration-active");
+      root.classList.remove("frustration-active");
     }, 10000);
   }
 
   // ─── Camera ──────────────────────────────────────────────────────
 
   async toggleCamera() {
-    const btn = this.querySelector("#lola-camera");
     const previewContainer = this.querySelector("#lola-camera-preview");
+    const menuLabel = this.querySelector("#menu-camera-label");
+    const desktopBtn = this.querySelector("#desktop-camera");
 
     if (this.cameraActive) {
       if (this.videoStreamer) this.videoStreamer.stop();
       this.videoStreamer = null;
       this.cameraActive = false;
-      btn.classList.remove("active");
-      btn.textContent = "Camera";
+      if (menuLabel) menuLabel.textContent = "Camera On";
+      if (desktopBtn) { desktopBtn.classList.remove("active"); desktopBtn.textContent = "Camera"; }
       if (previewContainer) {
         previewContainer.style.display = "none";
         previewContainer.innerHTML = "";
@@ -1578,8 +1892,8 @@ class ViewLola extends HTMLElement {
         previewContainer.appendChild(videoEl);
       }
       this.cameraActive = true;
-      btn.classList.add("active");
-      btn.textContent = "Camera ON";
+      if (menuLabel) menuLabel.textContent = "Camera Off";
+      if (desktopBtn) { desktopBtn.classList.add("active"); desktopBtn.textContent = "Camera ON"; }
     } catch (e) {
       console.error("Camera failed:", e);
     }
@@ -1613,6 +1927,11 @@ class ViewLola extends HTMLElement {
     this._frustrationCooldown = 0;
     this._frustrationCount = 0;
     if (this._frustrationTimer) clearTimeout(this._frustrationTimer);
+    this._stopTimer();
+    if (this._closeBurger) {
+      document.removeEventListener("click", this._closeBurger);
+      this._closeBurger = null;
+    }
     this.sessionActive = false;
     this.cameraActive = false;
   }

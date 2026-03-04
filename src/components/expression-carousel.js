@@ -115,14 +115,15 @@ class ExpressionCarousel extends HTMLElement {
   }
 
   connectedCallback() {
+    const fullbleed = this.hasAttribute('fullbleed');
     this.innerHTML = `
       <style>
-        :host { display: block; width: 100%; }
+        :host { display: block; width: 100%; ${fullbleed ? 'height: 100%;' : ''} }
         .ec-wrap {
           position: relative;
           width: 100%;
-          aspect-ratio: 4 / 5;
-          border-radius: var(--radius-lg);
+          ${fullbleed ? 'height: 100%;' : 'aspect-ratio: 4 / 5;'}
+          ${fullbleed ? '' : 'border-radius: var(--radius-lg);'}
           overflow: hidden;
           background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         }
@@ -175,6 +176,7 @@ class ExpressionCarousel extends HTMLElement {
           border-radius: 4px;
           pointer-events: none;
           transition: opacity 0.3s;
+          ${fullbleed ? 'display: none;' : ''}
         }
       </style>
       <div class="ec-wrap">

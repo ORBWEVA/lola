@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.1 — 2026-03-04)
+# LoLA — Loka Learning Avatar Master Reference (v2.2 — 2026-03-04)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.2 | 2026-03-05T06:00:00Z | Claude Code (Opus 4.6) | Immersive session view redesign: full-screen avatar with gradient overlay, glass speech bubble for live transcript on mobile, desktop side-by-side layout (3fr avatar / 2fr transcript), auto-start on session entry (no Start button), burger menu with End Session + Camera toggle, session timer pill, expression carousel fullbleed mode. |
 | 2.1 | 2026-03-05T05:00:00Z | Claude Code (Opus 4.6) | Ported frustration/success detection to split-screen dual-session view. Each panel independently detects frustration (EN/JA phrases, hesitation) and success with per-side 30s cooldown, escalation, and amber glow UI indicator. Context updates sent to each panel's own Gemini session. |
 | 2.0 | 2026-03-05T04:00:00Z | Claude Code (Opus 4.6) | Frustration detection + mid-session context updates. Frontend scans input transcription for frustration signals (explicit phrases, hesitation, Japanese markers) with 30s cooldown and escalation. Success detection on output transcription resets frustration state. Backend routes `context_update` messages through existing text pipeline to Gemini as sendClientContent(). Subtle amber glow UI indicator on avatar during frustration mode. Added `sendContextUpdate()` to GeminiLiveAPI. |
 | 1.9 | 2026-03-05T02:00:00Z | Claude Code (Opus 4.6) | Added IaC bonus documentation to README (cloudbuild.yaml trigger setup, deploy.sh, Dockerfile). Created Educator Creator Platform mock (`src/components/view-educator.js`) — glassmorphism cards, stats mockup, Q2 2026 badge, routed from landing. Created Devpost submission checklist (`docs/DEVPOST_SUBMISSION_CHECKLIST.md`). |
