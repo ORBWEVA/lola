@@ -155,6 +155,29 @@ Or wire `cloudbuild.yaml` to a GitHub push trigger for continuous deployment.
 
 **Demo day tip:** Avoid cold starts with `MIN_INSTANCES=1 ./scripts/deploy.sh`
 
+### Automated Deployment (IaC)
+
+LoLA uses Infrastructure as Code for automated cloud deployment:
+
+| File | Purpose |
+|------|---------|
+| `cloudbuild.yaml` | CI/CD pipeline — build, push to Artifact Registry, deploy to Cloud Run |
+| `Dockerfile` | Multi-stage build (Node.js frontend → Python backend) |
+| `scripts/deploy.sh` | One-command manual deploy via `gcloud run deploy` |
+
+**Set up a GitHub push trigger for continuous deployment:**
+
+```bash
+gcloud builds triggers create github \
+  --repo-name=lola \
+  --repo-owner=ORBWEVA \
+  --branch-pattern="^main$" \
+  --build-config=cloudbuild.yaml \
+  --description="Deploy LoLA on push to main"
+```
+
+Every push to `main` triggers Cloud Build → container build → Cloud Run deploy. No manual steps after initial setup.
+
 ---
 
 ## Project Structure

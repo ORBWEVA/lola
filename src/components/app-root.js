@@ -20,6 +20,7 @@ import './view-chat.js';
 import './view-summary.js';
 import './view-lola.js';
 import './split-screen.js';
+import './view-educator.js';
 import './text-cycler.js';
 
 class AppRoot extends HTMLElement {
@@ -165,6 +166,9 @@ class AppRoot extends HTMLElement {
                 break;
             case 'split':
                 currentView = document.createElement('split-screen');
+                break;
+            case 'educator':
+                currentView = document.createElement('view-educator');
                 break;
             case 'summary':
                 currentView = document.createElement('view-summary');

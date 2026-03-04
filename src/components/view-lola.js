@@ -796,6 +796,13 @@ class ViewLola extends HTMLElement {
             <button id="ob-demo" class="landing-secondary">Demo Profiles</button>
             <button id="ob-split" class="landing-split">Split-Screen Demo</button>
           </div>
+          <a id="ob-educator" href="#" style="
+            font-size: 0.8rem;
+            color: var(--lola-text-muted, #555575);
+            text-decoration: none;
+            margin-top: 8px;
+            transition: color 0.2s ease;
+          ">Educator Preview &rarr;</a>
         </div>
 
         <!-- Phone mockup -->
@@ -864,6 +871,12 @@ class ViewLola extends HTMLElement {
         new CustomEvent("navigate", { bubbles: true, detail: { view: "split" } })
       )
     );
+    this.querySelector("#ob-educator").addEventListener("click", (e) => {
+      e.preventDefault();
+      this.dispatchEvent(
+        new CustomEvent("navigate", { bubbles: true, detail: { view: "educator" } })
+      );
+    });
   }
 
   // ─── L1 Selection ────────────────────────────────────────────────
