@@ -21,6 +21,7 @@ import './view-summary.js';
 import './view-lola.js';
 import './split-screen.js';
 import './view-educator.js';
+import './view-dashboard.js';
 import './text-cycler.js';
 
 class AppRoot extends HTMLElement {
@@ -94,6 +95,7 @@ class AppRoot extends HTMLElement {
             if (e.detail.fromLanguage) this.state.selectedFromLanguage = e.detail.fromLanguage;
             if (e.detail.mode) this.state.selectedMode = e.detail.mode;
             if (e.detail.result) this.state.sessionResult = e.detail.result;
+            if (e.detail.profileData) this.state.profileData = e.detail.profileData;
             this.render();
         });
     }
@@ -169,6 +171,10 @@ class AppRoot extends HTMLElement {
                 break;
             case 'educator':
                 currentView = document.createElement('view-educator');
+                break;
+            case 'dashboard':
+                currentView = document.createElement('view-dashboard');
+                currentView.profileData = this.state.profileData;
                 break;
             case 'summary':
                 currentView = document.createElement('view-summary');

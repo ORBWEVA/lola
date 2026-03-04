@@ -997,6 +997,7 @@ class ViewLola extends HTMLElement {
 
       const target = this._l1 === "en" ? "Japanese" : "English";
       this._profileLabel = `Custom (${this._l1.toUpperCase()}\u2192${target})`;
+      this._activeProfile = { key: this._profileKey, label: this._profileLabel };
 
       this.showProfileSummary();
     } catch (e) {
@@ -1132,6 +1133,7 @@ class ViewLola extends HTMLElement {
         this._profileKey = p.key.replace("_", "-");
         this._systemInstruction = p.system_instruction;
         this._profileLabel = p.label;
+        this._activeProfile = { key: this._profileKey, label: this._profileLabel };
         this.showSession();
       });
       container.appendChild(card);
@@ -1568,7 +1570,10 @@ class ViewLola extends HTMLElement {
     const endSession = () => {
       this.cleanup();
       this._stopTimer();
-      this.showLanding();
+      this.dispatchEvent(new CustomEvent('navigate', {
+        bubbles: true,
+        detail: { view: 'dashboard', profileData: this._activeProfile }
+      }));
     };
 
     // Burger menu
