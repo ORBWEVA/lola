@@ -34,7 +34,7 @@ from server.fingerprint import generate_fingerprint
 from server.simple_tracker import simpletrack
 from server.config_utils import get_project_id, get_genai_client, get_model_name
 from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D
-from server.instruction_engine import generate_system_instruction, generate_context_update
+from server.instruction_engine import generate_system_instruction, generate_multilingual_instruction, generate_context_update
 
 
 # Rate Limiting
@@ -168,15 +168,15 @@ async def get_demo_profiles():
     return {
         "profile_a": {
             "profile": PROFILE_A,
-            "system_instruction": generate_system_instruction(PROFILE_A),
+            "system_instruction": generate_multilingual_instruction(PROFILE_A),
             "label": "The Analyst",
-            "description": "Japanese speaker learning English — analytical, structure-first",
+            "description": "Multilingual coach — analytical, structure-first",
         },
         "profile_b": {
             "profile": PROFILE_B,
-            "system_instruction": generate_system_instruction(PROFILE_B),
+            "system_instruction": generate_multilingual_instruction(PROFILE_B),
             "label": "The Explorer",
-            "description": "Japanese speaker learning English — social, action-oriented",
+            "description": "Multilingual coach — social, action-oriented",
         },
         "profile_c": {
             "profile": PROFILE_C,

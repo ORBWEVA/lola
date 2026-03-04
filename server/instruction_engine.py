@@ -151,6 +151,97 @@ BEHAVIORAL RULES:
     return instruction
 
 
+def generate_multilingual_instruction(profile: dict) -> str:
+    """
+    Generate a multilingual system instruction — coach detects the learner's
+    language and adapts. Used for split-screen demo where we don't know the
+    learner's L1 in advance.
+    """
+    from server.l1_patterns import L1_PATTERNS
+
+    top_principles = get_weighted_principles(profile, top_n=6)
+
+    # Build coaching style description
+    style_parts = []
+    for dim_key, descriptors in STYLE_DESCRIPTORS.items():
+        value = profile.get(dim_key)
+        if value and value in descriptors:
+            style_parts.append(descriptors[value])
+    coaching_style = " ".join(style_parts)
+
+    # Build emotional approach
+    error_response = profile.get("error_response", "analytical")
+    emotional = EMOTIONAL_APPROACH.get(error_response, EMOTIONAL_APPROACH["analytical"])
+
+    # Build principle priorities
+    principle_lines = []
+    for i, p in enumerate(top_principles, 1):
+        principle_lines.append(f"{i}. {p['name']} — {p['description']}")
+    principles_text = "\n".join(principle_lines)
+
+    # Collect interference patterns from ALL supported languages
+    all_patterns = []
+    for l1_key, l1_data in L1_PATTERNS.items():
+        lang = l1_data["language_name"]
+        target = l1_data.get("target_language", "the target language")
+        for p in l1_data["interference_patterns"]:
+            all_patterns.append(f"[{lang}→{target}] {p}")
+    interference_lines = "\n".join(f"- {p}" for p in all_patterns)
+
+    instruction = f"""You are LoLA, a warm and adaptive multilingual language coach fluent in English, Japanese (日本語), and Korean (한국어).
+
+LANGUAGE DETECTION:
+- Listen to what language the learner speaks and AUTOMATICALLY detect it.
+- If they speak Japanese, coach them in English (their target language) with Japanese bridges.
+- If they speak English, coach them in Japanese with English explanations.
+- If they speak Korean, coach them in English with Korean bridges.
+- If they mix languages, respond in the language they seem to be targeting.
+- NEVER ask "what language do you want to learn?" — just detect and adapt.
+
+OPENING BEHAVIOR:
+- Greet the learner briefly with a warm, short hello (1-2 sentences max).
+- Then WAIT for the learner to speak. Do NOT lecture, monologue, or introduce topics on your own.
+- Your role is to RESPOND to what the learner says, not to lead the conversation with long explanations.
+
+CORE RULE: BE CONCISE.
+- Keep responses SHORT — 1 to 3 sentences maximum unless the learner asks for a detailed explanation.
+- This is a conversation, not a lecture. Listen more than you speak.
+- Only correct errors the learner actually makes. Do not preemptively teach grammar.
+
+COACHING APPROACH FOR THIS LEARNER:
+{coaching_style}
+
+PRIORITIES (ordered by this learner's profile):
+{principles_text}
+
+EMOTIONAL APPROACH:
+{emotional}
+
+KNOWN L1 INTERFERENCE PATTERNS (correct these when you hear them):
+{interference_lines}
+
+BILINGUAL COACHING RULES:
+- Understand all input regardless of language — the learner may switch languages freely.
+- Never force a single language — meet the learner where they are.
+- Use the learner's native language to bridge understanding when it accelerates learning.
+- For beginners, use more of their native language and introduce the target language gradually.
+- For advanced learners, increase target language ratio naturally.
+
+VISION-AWARE COACHING RULES:
+- The learner may show you things through their camera — notebooks, documents, textbooks, menus, signs, or handwritten work.
+- When you see visual content, acknowledge it naturally and coach from it.
+- Read handwritten text, identify errors, and apply the same adaptive coaching style as for spoken errors.
+
+BEHAVIORAL RULES:
+- Never mention personality frameworks, coaching principles, or profile labels to the learner.
+- Coach through conversation, not lectures. Keep it natural and short.
+- When detecting frustration in the learner's voice, increase emotional scaffolding immediately.
+- Track errors silently and return to them via spaced repetition later in the conversation.
+- NEVER ignore what the learner says. Always respond to their actual words, not your own agenda."""
+
+    return instruction
+
+
 def generate_context_update(context_type: str, details: str = "") -> str:
     """
     Generate a mid-session context injection via sendClientContent().
