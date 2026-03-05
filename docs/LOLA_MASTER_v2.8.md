@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.7 — 2026-03-05)
+# LoLA — Loka Learning Avatar Master Reference (v2.8 — 2026-03-05)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.8 | 2026-03-05T19:00:00Z | Claude Code (Opus 4.6) | Added "Fork Origin — Immergo" section documenting what the Immergo base provided vs. what LoLA built from scratch, why the fork was chosen, and attribution (Zack Akil, Apache 2.0, official hackathon resource). |
 | 2.7 | 2026-03-05T18:00:00Z | Claude Code (Opus 4.6) | Gemini hackathon submission deliverables: Playwright capture script (`scripts/capture-demo.js`) for screen recordings + 6 screenshots, architecture diagram updated with Report Engine/Text Analysis/session_reports nodes, Remotion video wired with real capture files (3 ScreenCapture segments), blog post finalized with GitHub raw image URLs + coaching reports section, Devpost checklist updated. |
 | 2.6 | 2026-03-05T16:00:00Z | Claude Code (Opus 4.6) | Post-session coaching reports: new `session_reports` Supabase table (002 migration), `server/report_engine.py` (Gemini 2.5 Flash text-mode analysis with profile/principles/L1-aware prompt), background report generation triggered at session end via `asyncio.create_task`, two new API endpoints (`GET /api/reports/session/{id}`, `GET /api/reports/{device_id}`), dashboard Coaching Reports card activated with report list overlay + structured detail view (progress pills, strengths, improvements, tips). |
 | 2.5 | 2026-03-05T14:00:00Z | Claude Code (Opus 4.6) | README update for Devpost submission: live demo URL updated to new Cloud Run service, Supabase added to Mermaid architecture diagram (devices/sessions/transcript_entries + Dashboard node + Supabase Client), project structure updated (db.py, view-dashboard.js, view-educator.js, supabase/migrations/), Supabase row in tech stack table, SUPABASE_URL/SUPABASE_SERVICE_KEY in env vars, Cloud Run Secrets section, third-party disclosure section (hackathon §15 compliance). Branded architecture PNG re-rendered with Supabase layer via Playwright. |
@@ -60,6 +61,39 @@ This is the single source of truth for LoLA (Loka Learning Avatar) — the AI co
 |----------|-------------|
 | `LOKALINGO_MASTER.md` | Separate platform with its own architecture, codebase, and roadmap |
 | `lokalingo_dual_value_positioning_guide.md` | Sales collateral — downstream of positioning changes here |
+
+### Fork Origin — Immergo
+
+LoLA's codebase is forked from **Immergo**, an open-source language learning demo by Zack Akil (Google), released under the Apache 2.0 license. Immergo was listed as an official resource for the Gemini Live Agent Challenge hackathon.
+
+**What Immergo provided (the starting point):**
+- FastAPI backend with WebSocket proxy to Gemini Live API
+- Vanilla JS frontend with Web Components (app shell, text chat, missions view)
+- Audio pipeline: capture/playback AudioWorklets, PCM streaming, VAD
+- TalkingHead 3D avatar integration (MIT license, by Mika Suominen / met4citizen)
+- Camera/vision input via VideoStreamer (JPEG frames at 1fps)
+- "Mystic Archive" theme (sage green, paper textures, Libre Baskerville + Nunito)
+
+**What LoLA replaced or built from scratch (original work):**
+- Adaptive coaching engine: 12-principle neuroscience framework with weighted system instructions
+- Personality profiling: 5-question onboarding → coaching profile generation
+- L1 interference patterns: Japanese, Korean, English pattern files with target language support
+- Profile engine: 4 demo profiles (A/B/C/D) with both-direction language support (EN→JA, JA→EN)
+- Instruction engine: profile + L1 patterns + 12 principles → weighted system instruction
+- Split-screen dual-session demo: shared mic, dual WebSockets, independent coaching
+- Expression carousel: replaced TalkingHead 3D with FLUX-generated 2D expressions (8 per profile)
+- Frustration/success detection: real-time input scanning with escalation and cooldown
+- Mid-session context updates: frustration state pushed to Gemini via sendClientContent()
+- LoLA Brand Guide v1: complete visual rebrand (indigo/rose/sky on dark blue-black)
+- Dashboard: credits, session history, transcripts, coaching reports
+- Report engine: post-session Gemini text analysis with profile-aware prompts
+- Supabase persistence: devices, sessions, transcript entries, session reports
+- Content pipeline: n8n workflows S1-W01 (character creator) + S1-W01b (reference packs)
+- Educator Creator Platform mock: glassmorphism dashboard with avatar/methodology/monetize cards
+- Cloud Run deployment: deploy.sh, cloudbuild.yaml, multi-stage Dockerfile
+- Remotion demo video scaffold: 8-sequence composition with branded sequences
+
+**The fork was chosen because:** Immergo provided a clean, working Gemini Live API integration (WebSocket proxy + audio pipeline) — the exact plumbing needed for real-time voice coaching. Building this from scratch would have consumed most of the hackathon. By forking, development time went entirely into the coaching methodology, personality adaptation, and creator platform — the actual differentiators.
 
 ---
 
