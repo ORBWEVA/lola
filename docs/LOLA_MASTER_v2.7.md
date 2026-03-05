@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.6 — 2026-03-05)
+# LoLA — Loka Learning Avatar Master Reference (v2.7 — 2026-03-05)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.7 | 2026-03-05T18:00:00Z | Claude Code (Opus 4.6) | Gemini hackathon submission deliverables: Playwright capture script (`scripts/capture-demo.js`) for screen recordings + 6 screenshots, architecture diagram updated with Report Engine/Text Analysis/session_reports nodes, Remotion video wired with real capture files (3 ScreenCapture segments), blog post finalized with GitHub raw image URLs + coaching reports section, Devpost checklist updated. |
 | 2.6 | 2026-03-05T16:00:00Z | Claude Code (Opus 4.6) | Post-session coaching reports: new `session_reports` Supabase table (002 migration), `server/report_engine.py` (Gemini 2.5 Flash text-mode analysis with profile/principles/L1-aware prompt), background report generation triggered at session end via `asyncio.create_task`, two new API endpoints (`GET /api/reports/session/{id}`, `GET /api/reports/{device_id}`), dashboard Coaching Reports card activated with report list overlay + structured detail view (progress pills, strengths, improvements, tips). |
 | 2.5 | 2026-03-05T14:00:00Z | Claude Code (Opus 4.6) | README update for Devpost submission: live demo URL updated to new Cloud Run service, Supabase added to Mermaid architecture diagram (devices/sessions/transcript_entries + Dashboard node + Supabase Client), project structure updated (db.py, view-dashboard.js, view-educator.js, supabase/migrations/), Supabase row in tech stack table, SUPABASE_URL/SUPABASE_SERVICE_KEY in env vars, Cloud Run Secrets section, third-party disclosure section (hackathon §15 compliance). Branded architecture PNG re-rendered with Supabase layer via Playwright. |
 | 2.4 | 2026-03-05T12:00:00Z | Claude Code (Opus 4.6) | Supabase persistence layer (Phase 3): devices/sessions/transcript_entries schema, backend API endpoints (POST /api/devices, POST /api/sessions/start, POST /api/sessions/end, GET /api/sessions/{device_id}, GET /api/transcripts/{session_id}), frontend device_id in localStorage, transcript accumulation during sessions, dashboard wired to real data (credits, session count, total minutes), Transcripts card functional with session list + transcript detail overlay. Graceful fallback when Supabase not configured. |

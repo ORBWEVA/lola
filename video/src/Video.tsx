@@ -25,6 +25,7 @@ export const DemoVideo: React.FC = () => {
         <ScreenCapture
           sectionLabel="Live Demo — Onboarding"
           startTime="0:25"
+          videoFile="captures/onboarding.mp4"
           narrationCues={[
             { atFrame: 0, text: "Let me show you how LoLA works. First, you pick your native language..." },
             { atFrame: 300, text: "...answer five quick questions about your learning style..." },
@@ -38,6 +39,7 @@ export const DemoVideo: React.FC = () => {
         <ScreenCapture
           sectionLabel="Live Demo — Two Coaches, Same Error"
           startTime="0:50"
+          videoFile="captures/split-screen.mp4"
           narrationCues={[
             { atFrame: 0, text: "Now watch what happens when two different learners make the same mistake..." },
             { atFrame: 600, text: "Coach A focuses on grammar patterns — because this learner responds to structure." },
@@ -47,14 +49,15 @@ export const DemoVideo: React.FC = () => {
         />
       </Series.Sequence>
 
-      {/* 2:00–2:30 — Vision demo (screen capture) */}
+      {/* 2:00–2:30 — Dashboard & Reports (screen capture) */}
       <Series.Sequence durationInFrames={FRAMES.VISION}>
         <ScreenCapture
-          sectionLabel="Live Demo — Vision Mode"
+          sectionLabel="Live Demo — Dashboard & Reports"
           startTime="2:00"
+          videoFile="captures/vision.mp4"
           narrationCues={[
-            { atFrame: 0, text: "LoLA can also see. Hold up a notebook with English writing..." },
-            { atFrame: 450, text: "...and the coach reads your handwriting and gives real-time feedback." },
+            { atFrame: 0, text: "After each session, LoLA generates a coaching report using Gemini text analysis..." },
+            { atFrame: 450, text: "...tracking progress, patterns, and personalized recommendations over time." },
           ]}
         />
       </Series.Sequence>

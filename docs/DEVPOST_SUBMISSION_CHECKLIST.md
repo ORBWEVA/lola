@@ -33,9 +33,9 @@ gemini-live-api, google-genai-sdk, google-cloud-run, fastapi, python, javascript
 
 | Item | Local Path | Notes |
 |------|-----------|-------|
-| Architecture Diagram | `docs/lola-architecture.png` | 1600x900, branded |
-| Cover Image | Use architecture diagram or screenshot | Devpost gallery |
-| Screenshots | Capture from live demo | Onboarding, session, split-screen |
+| Architecture Diagram | `docs/lola-architecture.png` | 1200x900, branded, includes Report Engine |
+| Cover Image | `screenshots/landing.png` | Devpost gallery |
+| Screenshots | `screenshots/` | landing, onboarding, session, split-screen, dashboard, report-detail |
 
 ## Third-Party Disclosure (paste verbatim)
 
@@ -50,18 +50,18 @@ gemini-live-api, google-genai-sdk, google-cloud-run, fastapi, python, javascript
 
 ## Video Requirements
 
-- [ ] Under 4 minutes
+- [x] Under 4 minutes (3:35 @ 30fps = 6450 frames)
 - [ ] Hosted on YouTube or Vimeo (public or unlisted)
-- [ ] Shows: onboarding flow, coaching session, split-screen demo, vision input
-- [ ] Mentions Gemini Live API usage
+- [x] Shows: onboarding flow, coaching session, split-screen demo, dashboard & reports
+- [x] Mentions Gemini Live API usage
 
 ## Bonus Points Checklist
 
 | Bonus | Points | Status |
 |-------|--------|--------|
-| Blog post (Medium/dev.to) | +0.6 | DONE — `docs/BLOG_POST.md` |
+| Blog post (Medium/dev.to) | +0.6 | DONE — `docs/BLOG_POST.md` (real image URLs, coaching reports section) |
 | Automated cloud deployment (IaC) | +0.2 | DONE — `cloudbuild.yaml` |
-| Architecture diagram | +0.2 | DONE — `docs/lola-architecture.png` |
+| Architecture diagram | +0.2 | DONE — `docs/lola-architecture.png` (updated with Report Engine) |
 
 ## Pre-Submit Final Checks
 
@@ -69,7 +69,9 @@ gemini-live-api, google-genai-sdk, google-cloud-run, fastapi, python, javascript
 - [ ] Video uploaded and URL pasted
 - [ ] Blog post published and URL pasted
 - [ ] GitHub repo is public
-- [ ] Live demo loads without errors
-- [ ] Architecture diagram uploaded
-- [ ] Third-party disclosure included
+- [x] Live demo loads without errors
+- [x] Architecture diagram uploaded (updated with Report Engine)
+- [x] Third-party disclosure included
 - [ ] "Live Agents" category selected
+- [x] Screenshots captured (`scripts/capture-demo.js`)
+- [x] Remotion video wired with real captures

@@ -14,8 +14,7 @@ Same mistake. Two completely different coaching responses. Two different Gemini 
 
 That is LoLA.
 
-<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
-![Split-screen demo: two coaches respond differently to the same mistake](../lola-remotion-splitscreen.png)
+![Split-screen demo: two coaches respond differently to the same mistake](https://raw.githubusercontent.com/ORBWEVA/lola/main/screenshots/split-screen.png)
 *Same mic input, two Gemini sessions, two visibly different coaching responses.*
 
 ---
@@ -34,8 +33,7 @@ That is tutoring. Tutoring delivers content. Coaching adapts to the human.
 
 Most AI language products are tutors wearing a coaching hat. They have one correction style, one pacing model, one emotional register. They might adjust difficulty, but they never adjust *how* they teach. LoLA -- Loka Learning Avatar -- was built to close that gap.
 
-<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
-![LoLA landing page](../lola-rebrand-landing.png)
+![LoLA landing page](https://raw.githubusercontent.com/ORBWEVA/lola/main/screenshots/landing.png)
 
 ## A 30-Second Onboarding That Changes Everything
 
@@ -71,8 +69,7 @@ ANSWER_MAP = {
 
 Simple. Deterministic. No LLM call required for profiling. The profile is a plain Python dictionary -- portable, inspectable, and reproducible.
 
-<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
-![5-question onboarding flow](../lola-remotion-onboarding.png)
+![5-question onboarding flow](https://raw.githubusercontent.com/ORBWEVA/lola/main/screenshots/onboarding.png)
 *Five personality questions in the learner's native language generate a unique coaching profile.*
 
 ## 12 Principles, Weighted Per Learner
@@ -213,6 +210,21 @@ Gemini Live accepts image frames alongside audio. LoLA sends 1fps JPEG frames fr
 
 A learner holds up a handwritten English essay. LoLA reads it, identifies errors that match their L1 interference patterns, and coaches them through corrections using their preferred style -- all in real time, all through voice.
 
+## Post-Session Coaching Reports: The Second Gemini Use Case
+
+LoLA uses Gemini in two distinct ways. The first -- real-time native audio coaching -- is the headline feature. The second is quieter but equally important: post-session coaching reports.
+
+When a session ends, LoLA sends the full transcript to Gemini 2.5 Flash (text mode) with a structured analysis prompt. The model generates a coaching report covering:
+
+- **Error patterns observed** -- categorized by L1 interference type
+- **Coaching effectiveness** -- which corrections the learner self-corrected vs. repeated
+- **Progress indicators** -- fluency markers, confidence signals, vocabulary range
+- **Personalized recommendations** -- what to focus on in the next session
+
+These reports persist in Supabase (`session_reports` table) and are accessible from the learner dashboard. Over multiple sessions, they build a longitudinal view of the learner's progress -- something that typically requires a human coach tracking notes across lessons.
+
+The report engine is a second, independent Gemini integration. The live session uses native audio streaming. The report generation uses standard text completion. Same model family, two completely different interaction patterns, both critical to the coaching experience.
+
 ## Standing on Immergo's Shoulders
 
 LoLA is forked from Google's Immergo, the official language learning demo for the Gemini Live API built by Zack Akil. Immergo deserves credit for solving the hard infrastructure problems: WebSocket setup, audio streaming architecture, camera input framework, and the basic FastAPI-to-Gemini proxy pattern.
@@ -269,9 +281,8 @@ Real-time PCM streaming at 16kHz through AudioWorklets requires careful attentio
 
 Get the buffer size wrong and you get clicks and pops. Get the sample rate wrong and the audio sounds like a chipmunk or a whale. Get the lifecycle wrong and the worklet dies silently mid-session. Each of these happened. Each was resolved through patience and careful logging.
 
-<!-- When publishing to Medium/dev.to, replace with hosted image URL -->
-![LoLA architecture diagram](lola-architecture.png)
-*Browser → Cloud Run → Gemini 2.5 Flash Native Audio*
+![LoLA architecture diagram](https://raw.githubusercontent.com/ORBWEVA/lola/main/docs/lola-architecture.png)
+*Browser → Cloud Run → Gemini 2.5 Flash Native Audio → Post-session Report Engine*
 
 ## Architecture: One Command to Deploy
 
