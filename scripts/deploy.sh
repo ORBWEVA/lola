@@ -43,6 +43,8 @@ echo ""
 
 # ── Check Secret Manager ────────────────────────────────────────────
 
+SECRETS=""
+
 if ! gcloud secrets describe GEMINI_API_KEY --project="$PROJECT_ID" &>/dev/null; then
   echo "Warning: GEMINI_API_KEY secret not found in Secret Manager."
   echo "Create it with:"
@@ -53,9 +55,21 @@ if ! gcloud secrets describe GEMINI_API_KEY --project="$PROJECT_ID" &>/dev/null;
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
   fi
-  SECRET_FLAG=""
 else
-  SECRET_FLAG="--update-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest"
+  SECRETS="GEMINI_API_KEY=GEMINI_API_KEY:latest"
+fi
+
+# Supabase secrets (optional — app works without)
+if gcloud secrets describe SUPABASE_URL --project="$PROJECT_ID" &>/dev/null; then
+  SECRETS="${SECRETS:+$SECRETS,}SUPABASE_URL=SUPABASE_URL:latest"
+fi
+if gcloud secrets describe SUPABASE_SERVICE_KEY --project="$PROJECT_ID" &>/dev/null; then
+  SECRETS="${SECRETS:+$SECRETS,}SUPABASE_SERVICE_KEY=SUPABASE_SERVICE_KEY:latest"
+fi
+
+SECRET_FLAG=""
+if [ -n "$SECRETS" ]; then
+  SECRET_FLAG="--update-secrets=$SECRETS"
 fi
 
 # ── Build & Deploy ──────────────────────────────────────────────────

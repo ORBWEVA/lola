@@ -65,7 +65,7 @@ steps:
       - "--set-env-vars"
       - "DEV_MODE=false,SESSION_TIME_LIMIT=180"
       - "--update-secrets"
-      - "GEMINI_API_KEY=GEMINI_API_KEY:latest"
+      - "GEMINI_API_KEY=GEMINI_API_KEY:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_SERVICE_KEY=SUPABASE_SERVICE_KEY:latest"
 
 images:
   - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/${_SERVICE}"
