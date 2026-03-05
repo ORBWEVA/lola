@@ -35,6 +35,7 @@ from server.simple_tracker import simpletrack
 from server.config_utils import get_project_id, get_genai_client, get_model_name
 from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D
 from server.instruction_engine import generate_system_instruction, generate_multilingual_instruction, generate_context_update
+from server.report_engine import generate_report
 from server.db import get_db
 
 
@@ -278,9 +279,76 @@ async def end_session(request: Request):
         if device.data:
             new_credits = max(0, device.data[0]["credits"] - credits_used)
             db.table("devices").update({"credits": new_credits}).eq("id", device_id).execute()
+
+            # Queue coaching report generation (non-blocking)
+            if transcript and session_id:
+                try:
+                    db.table("session_reports").insert({"session_id": session_id, "status": "pending"}).execute()
+                    asyncio.create_task(_generate_report_background(session_id))
+                except Exception as e:
+                    logger.warning(f"Failed to queue report: {e}")
+
             return {"credits_remaining": new_credits, "session_summary": {"duration_seconds": duration, "credits_used": credits_used}}
 
     return {"credits_remaining": 0, "session_summary": {"duration_seconds": duration}}
+
+
+async def _generate_report_background(session_id: str):
+    """Fire-and-forget: generate a coaching report for a completed session."""
+    db = get_db()
+    if not db:
+        return
+    try:
+        db.table("session_reports").update({"status": "generating"}).eq("session_id", session_id).execute()
+
+        # Fetch session data
+        session = db.table("sessions").select("profile_data, duration_seconds, frustration_count").eq("id", session_id).execute()
+        if not session.data:
+            raise ValueError(f"Session {session_id} not found")
+
+        s = session.data[0]
+        profile_data = s.get("profile_data") or {}
+        duration = s.get("duration_seconds") or 0
+        frustration_count = s.get("frustration_count") or 0
+
+        # Fetch transcript
+        entries = db.table("transcript_entries").select("role, content, seq").eq("session_id", session_id).order("seq").execute()
+        transcript = entries.data or []
+
+        if len(transcript) < 4:
+            # Too short for meaningful analysis
+            db.table("session_reports").update({
+                "status": "complete",
+                "model_used": "skipped",
+                "generated_at": "now()",
+                "report_data": {
+                    "summary": "Session was too short for detailed analysis.",
+                    "strengths": [],
+                    "improvements": [],
+                    "personalized_tips": ["Try a longer session (3+ minutes) to get personalized coaching insights."],
+                    "progress_indicators": {"fluency": "emerging", "accuracy": "emerging", "confidence": "emerging", "engagement": "emerging"},
+                    "session_stats": {"total_turns": len(transcript), "user_turns": sum(1 for t in transcript if t.get("role") == "user"), "avg_user_length": 0},
+                },
+            }).eq("session_id", session_id).execute()
+            logger.info(f"Report skipped for session {session_id}: too short ({len(transcript)} entries)")
+            return
+
+        report = await generate_report(GENAI_CLIENT, session_id, transcript, profile_data, duration, frustration_count)
+
+        db.table("session_reports").update({
+            "status": "complete",
+            "report_data": report,
+            "model_used": "gemini-2.5-flash",
+            "generated_at": "now()",
+        }).eq("session_id", session_id).execute()
+        logger.info(f"Report generated for session {session_id}")
+
+    except Exception as e:
+        logger.error(f"Report generation failed for {session_id}: {e}")
+        try:
+            db.table("session_reports").update({"status": "failed"}).eq("session_id", session_id).execute()
+        except Exception:
+            pass
 
 
 @app.get("/api/sessions/{device_id}")
@@ -311,6 +379,56 @@ async def get_transcripts(session_id: str):
     ).eq("session_id", session_id).order("seq").execute()
 
     return {"entries": result.data}
+
+
+@app.get("/api/reports/session/{session_id}")
+async def get_report(session_id: str):
+    """Return a single coaching report by session ID."""
+    db = get_db()
+
+    if not db:
+        return {"report": None}
+
+    result = db.table("session_reports").select("*").eq("session_id", session_id).execute()
+
+    if not result.data:
+        return {"report": None}
+
+    return {"report": result.data[0]}
+
+
+@app.get("/api/reports/{device_id}")
+async def get_reports(device_id: str):
+    """Return all coaching reports for a device (joins sessions -> session_reports)."""
+    db = get_db()
+
+    if not db:
+        return {"reports": []}
+
+    # Get session IDs for this device
+    sessions = db.table("sessions").select("id, profile_label, duration_seconds, started_at").eq("device_id", device_id).order("started_at", desc=True).execute()
+
+    if not sessions.data:
+        return {"reports": []}
+
+    session_ids = [s["id"] for s in sessions.data]
+    reports = db.table("session_reports").select("*").in_("session_id", session_ids).execute()
+
+    # Merge session info into reports
+    session_map = {s["id"]: s for s in sessions.data}
+    merged = []
+    for r in (reports.data or []):
+        s = session_map.get(r["session_id"], {})
+        merged.append({
+            **r,
+            "profile_label": s.get("profile_label"),
+            "duration_seconds": s.get("duration_seconds"),
+            "started_at": s.get("started_at"),
+        })
+
+    # Sort by session date descending
+    merged.sort(key=lambda x: x.get("started_at", ""), reverse=True)
+    return {"reports": merged}
 
 
 @app.get("/{full_path:path}")

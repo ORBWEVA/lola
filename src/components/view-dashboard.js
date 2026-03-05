@@ -497,8 +497,8 @@ class ViewDashboard extends HTMLElement {
           <div class="dash-card" id="card-reports">
             <div class="dash-card-icon" style="background: rgba(6, 214, 160, 0.15);">&#x1F4CA;</div>
             <div class="dash-card-body">
-              <div class="dash-card-title">Coaching Reports <span class="dash-badge-soon">Soon</span></div>
-              <div class="dash-card-sub">Progress & insights</div>
+              <div class="dash-card-title">Coaching Reports</div>
+              <div class="dash-card-sub" id="reports-sub">Progress & insights</div>
             </div>
             <div class="dash-card-arrow">&rsaquo;</div>
           </div>
@@ -543,7 +543,9 @@ class ViewDashboard extends HTMLElement {
     // --- Event Listeners ---
     this.querySelector('#dash-topup').addEventListener('click', comingSoon);
     this.querySelector('#card-recordings').addEventListener('click', comingSoon);
-    this.querySelector('#card-reports').addEventListener('click', comingSoon);
+    this.querySelector('#card-reports').addEventListener('click', () => {
+      this._showReportsOverlay();
+    });
 
     this.querySelector('#card-transcripts').addEventListener('click', () => {
       this._showTranscriptsOverlay();
@@ -605,6 +607,28 @@ class ViewDashboard extends HTMLElement {
 
       const subEl = this.querySelector('#transcripts-sub');
       if (subEl) subEl.textContent = count > 0 ? `${count} session${count !== 1 ? 's' : ''}` : 'No sessions yet';
+
+      // Fetch coaching reports
+      try {
+        const reportsRes = await fetch(`/api/reports/${this._deviceId}`);
+        const reportsData = await reportsRes.json();
+        this._reports = reportsData.reports || [];
+        const reportsSubEl = this.querySelector('#reports-sub');
+        if (reportsSubEl) {
+          const ready = this._reports.filter(r => r.status === 'complete').length;
+          const generating = this._reports.filter(r => r.status === 'generating' || r.status === 'pending').length;
+          if (ready > 0 || generating > 0) {
+            let text = ready > 0 ? `${ready} report${ready !== 1 ? 's' : ''} ready` : '';
+            if (generating > 0) text += (text ? ' \u00B7 ' : '') + `${generating} generating...`;
+            reportsSubEl.textContent = text;
+          } else {
+            reportsSubEl.textContent = 'No reports yet';
+          }
+        }
+      } catch (re) {
+        console.warn('Failed to fetch reports:', re);
+        this._reports = [];
+      }
     } catch (e) {
       console.warn('Failed to fetch session history:', e);
       this._updateStats(0, 0);
@@ -734,6 +758,183 @@ class ViewDashboard extends HTMLElement {
       });
     } catch (e) {
       content.querySelector('.dash-empty').textContent = 'Failed to load transcript.';
+    }
+  }
+
+  _showReportsOverlay() {
+    const existing = this.querySelector('.dash-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dash-overlay';
+    const reports = this._reports || [];
+
+    if (!reports.length) {
+      overlay.innerHTML = `
+        <div class="dash-overlay-content">
+          <div class="dash-overlay-header">
+            <span class="dash-overlay-title">Coaching Reports</span>
+            <button class="dash-overlay-close">&times;</button>
+          </div>
+          <div class="dash-empty">No reports yet. Complete a session to get your first coaching report.</div>
+        </div>
+      `;
+      this.appendChild(overlay);
+      overlay.querySelector('.dash-overlay-close').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      return;
+    }
+
+    const statusBadge = (status) => {
+      const colors = { complete: '#06d6a0', generating: '#ffd166', pending: '#ffd166', failed: '#ef476f' };
+      const labels = { complete: 'READY', generating: 'GENERATING', pending: 'PENDING', failed: 'FAILED' };
+      const c = colors[status] || '#888';
+      const l = labels[status] || status;
+      return `<span style="font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${c}22;color:${c};border:1px solid ${c}44;text-transform:uppercase;letter-spacing:0.05em">${l}</span>`;
+    };
+
+    let html = `
+      <div class="dash-overlay-content">
+        <div class="dash-overlay-header">
+          <span class="dash-overlay-title">Coaching Reports</span>
+          <button class="dash-overlay-close">&times;</button>
+        </div>
+    `;
+
+    for (const r of reports) {
+      const date = r.started_at ? new Date(r.started_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      }) : 'Unknown date';
+      const dur = r.duration_seconds ? `${Math.round(r.duration_seconds / 60)} min` : '< 1 min';
+      const clickable = r.status === 'complete' ? 'data-clickable="true"' : '';
+      html += `
+        <div class="dash-session-item" data-session-id="${r.session_id}" ${clickable} style="${r.status !== 'complete' ? 'opacity:0.6;cursor:default' : ''}">
+          <div>
+            <div class="dash-session-label">${this._escapeHtml(r.profile_label || 'Session')}</div>
+            <div class="dash-session-meta">${date} &middot; ${dur} &middot; ${statusBadge(r.status)}</div>
+          </div>
+          <div class="dash-session-arrow">${r.status === 'complete' ? '&rsaquo;' : ''}</div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    overlay.innerHTML = html;
+    this.appendChild(overlay);
+
+    overlay.querySelector('.dash-overlay-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelectorAll('.dash-session-item[data-clickable="true"]').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._showReportDetail(item.dataset.sessionId, overlay);
+      });
+    });
+  }
+
+  async _showReportDetail(sessionId, parentOverlay) {
+    const content = parentOverlay.querySelector('.dash-overlay-content');
+    content.innerHTML = `
+      <div class="dash-overlay-header">
+        <button class="dash-back-btn" id="report-back">&larr; Back</button>
+        <button class="dash-overlay-close">&times;</button>
+      </div>
+      <div class="dash-empty">Loading report...</div>
+    `;
+
+    parentOverlay.querySelector('.dash-overlay-close').addEventListener('click', () => parentOverlay.remove());
+    parentOverlay.querySelector('#report-back').addEventListener('click', () => {
+      parentOverlay.remove();
+      this._showReportsOverlay();
+    });
+
+    try {
+      const res = await fetch(`/api/reports/session/${sessionId}`);
+      const data = await res.json();
+      const report = data.report?.report_data;
+
+      if (!report) {
+        content.querySelector('.dash-empty').textContent = 'Report not available.';
+        return;
+      }
+
+      const pillColor = (level) => {
+        const colors = { emerging: '#ef476f', developing: '#ffd166', moderate: '#06d6a0', strong: '#4cc9f0' };
+        return colors[level] || '#888';
+      };
+
+      let html = `
+        <div class="dash-overlay-header">
+          <button class="dash-back-btn" id="report-back-2">&larr; Back</button>
+          <button class="dash-overlay-close">&times;</button>
+        </div>
+      `;
+
+      // Summary
+      html += `<div style="margin-bottom:16px">
+        <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--lola-text-muted);margin-bottom:6px">Summary</div>
+        <div style="font-size:0.9rem;color:var(--lola-text);line-height:1.6">${this._escapeHtml(report.summary || '')}</div>
+      </div>`;
+
+      // Progress indicators
+      if (report.progress_indicators) {
+        html += `<div style="margin-bottom:16px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--lola-text-muted);margin-bottom:8px">Progress</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">`;
+        for (const [key, level] of Object.entries(report.progress_indicators)) {
+          const c = pillColor(level);
+          html += `<span style="font-size:0.75rem;font-weight:600;padding:4px 12px;border-radius:20px;background:${c}22;color:${c};border:1px solid ${c}44;text-transform:capitalize">${key}: ${level}</span>`;
+        }
+        html += `</div></div>`;
+      }
+
+      // Strengths
+      if (report.strengths?.length) {
+        html += `<div style="margin-bottom:16px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06d6a0;margin-bottom:8px">Strengths</div>`;
+        for (const s of report.strengths) {
+          html += `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+            <div style="font-size:0.85rem;color:var(--lola-text)">${this._escapeHtml(s.observation)}</div>
+            ${s.example ? `<div style="font-size:0.8rem;color:var(--lola-text-muted);font-style:italic;margin-top:4px">"${this._escapeHtml(s.example)}"</div>` : ''}
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      // Improvements
+      if (report.improvements?.length) {
+        html += `<div style="margin-bottom:16px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--lola-sky, #4cc9f0);margin-bottom:8px">Areas for Improvement</div>`;
+        for (const imp of report.improvements) {
+          html += `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+            <div style="font-size:0.8rem;font-weight:600;color:var(--lola-text)">${this._escapeHtml(imp.pattern || '')}</div>
+            <div style="font-size:0.85rem;color:var(--lola-text);margin-top:4px">${this._escapeHtml(imp.observation)}</div>
+            ${imp.example ? `<div style="font-size:0.8rem;color:var(--lola-text-muted);font-style:italic;margin-top:4px">"${this._escapeHtml(imp.example)}"</div>` : ''}
+            ${imp.tip ? `<div style="font-size:0.8rem;color:#06d6a0;margin-top:6px">Tip: ${this._escapeHtml(imp.tip)}</div>` : ''}
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      // Personalized tips
+      if (report.personalized_tips?.length) {
+        html += `<div style="margin-bottom:16px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--lola-text-muted);margin-bottom:8px">Next Steps</div>`;
+        for (const tip of report.personalized_tips) {
+          html += `<div style="font-size:0.85rem;color:var(--lola-text);padding:6px 0;padding-left:12px;border-left:2px solid var(--lola-indigo, #4361ee)">${this._escapeHtml(tip)}</div>`;
+        }
+        html += `</div>`;
+      }
+
+      content.innerHTML = html;
+      content.querySelector('.dash-overlay-close').addEventListener('click', () => parentOverlay.remove());
+      content.querySelector('#report-back-2').addEventListener('click', () => {
+        parentOverlay.remove();
+        this._showReportsOverlay();
+      });
+    } catch (e) {
+      content.querySelector('.dash-empty').textContent = 'Failed to load report.';
     }
   }
 
