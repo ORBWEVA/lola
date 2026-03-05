@@ -6,7 +6,7 @@ Built on the [Gemini Multimodal Live API](https://ai.google.dev/gemini-api/docs/
 
 > Hackathon entry for the [Gemini Live Agent Challenge](https://googledevelopers.devpost.com/) (Live Agents category). Forked from Google's [Immergo](https://github.com/ZackAkil/immersive-language-learning-with-live-api) language learning demo (Apache 2.0).
 
-**[Live Demo](https://lola-bivpadh7zq-uc.a.run.app)** | [Architecture Diagram](docs/lola-architecture.png) | [Blog Post](docs/BLOG_POST.md)
+**[Live Demo](https://lola-640563380978.us-central1.run.app)** | [Architecture Diagram](docs/lola-architecture.png) | [Blog Post](docs/BLOG_POST.md)
 
 ---
 
@@ -31,6 +31,7 @@ graph TB
         OB["5-Question Onboarding<br/>L1 select → quiz → profile"]
         VC["Voice Chat Session<br/>Expression carousel + waveforms"]
         SS["Split-Screen Demo<br/>Two coaches side-by-side"]
+        DB["User Dashboard<br/>Sessions, transcripts, credits"]
 
         subgraph Media["Media Layer"]
             WA["Web Audio API<br/>AudioWorklets (capture + playback)"]
@@ -47,12 +48,19 @@ graph TB
         IE["Instruction Engine<br/>Profile + L1 patterns<br/>+ 12 principles →<br/>system instruction"]
         GL["Gemini Live Session(s)<br/>Audio + video + transcription"]
         L1["L1 Pattern Files<br/>JA → EN | KO → EN | EN → JA"]
+        SBC["Supabase Client<br/>Sessions + transcripts"]
     end
 
     subgraph Gemini["Gemini 2.5 Flash Native Audio"]
         GA["Real-time audio dialog"]
         GT["Input/output transcription"]
         GV["Vision (notebook reading)"]
+    end
+
+    subgraph Supabase["Supabase (PostgreSQL)"]
+        DEV["devices"]
+        SES["sessions"]
+        TE["transcript_entries"]
     end
 
     OB --> PE
@@ -65,6 +73,8 @@ graph TB
     IE --> GL
     L1 --> IE
     GL --> Gemini
+    SBC --> Supabase
+    DB --> SBC
 ```
 
 ### Audio Pipeline
@@ -190,6 +200,7 @@ lola/
 │   ├── profile_engine.py       # 5-question onboarding → coaching profile
 │   ├── instruction_engine.py   # Profile + L1 + 12 principles → system instruction
 │   ├── principles.py           # 12-principle coaching framework (weighted)
+│   ├── db.py                   # Supabase client (sessions, transcripts, credits)
 │   └── l1_patterns/            # L1 interference patterns
 │       ├── japanese.py         # JA→EN patterns + L1 bridges
 │       ├── korean.py           # KO→EN patterns + L1 bridges
@@ -197,6 +208,8 @@ lola/
 ├── src/                        # Frontend (Vanilla JS Web Components)
 │   ├── components/
 │   │   ├── view-lola.js        # Main session — onboarding + voice chat
+│   │   ├── view-dashboard.js   # User dashboard — sessions, transcripts, credits
+│   │   ├── view-educator.js    # Educator preview dashboard
 │   │   ├── split-screen.js     # Dual-session demo view
 │   │   ├── expression-carousel.js  # Avatar expression image crossfade
 │   │   ├── audio-visualizer.js # Guitar-string waveform via AnalyserNode
@@ -209,6 +222,8 @@ lola/
 │   ├── dev.sh                  # Start local dev environment
 │   ├── deploy.sh               # Cloud Run deploy script
 │   └── generate-expressions.js # Avatar image generation pipeline
+├── supabase/
+│   └── migrations/             # PostgreSQL schema files
 ├── Dockerfile                  # Multi-stage build (Node + Python)
 ├── cloudbuild.yaml             # Cloud Build CI/CD pipeline
 └── docs/                       # Specs, master doc, addenda
@@ -223,6 +238,7 @@ lola/
 | LLM | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) |
 | Backend | Python 3.10 / FastAPI / `google-genai` SDK |
 | Frontend | Vanilla JS / Vite / Web Components / Web Audio API |
+| Persistence | Supabase (PostgreSQL — sessions, transcripts, credits) |
 | Avatar | Pre-rendered FLUX Kontext Pro expressions (8 per profile) |
 | Deployment | Google Cloud Run |
 | Avatar generation | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI |
@@ -272,6 +288,27 @@ Each principle carries a weight (0.0–1.0) determined by the learner's profile.
 | `SESSION_TIME_LIMIT` | No | `180` | Max session length in seconds |
 | `RECAPTCHA_SITE_KEY` | No | — | reCAPTCHA v3 for bot protection |
 | `REDIS_URL` | No | — | Redis for distributed rate limiting |
+| `SUPABASE_URL` | No | — | Supabase project URL (enables persistence) |
+| `SUPABASE_SERVICE_KEY` | No | — | Supabase service role key |
+
+---
+
+## Cloud Run Secrets
+
+When deploying to Cloud Run, Supabase credentials are stored in Google Secret Manager alongside the Gemini API key:
+
+```bash
+echo -n "YOUR_SUPABASE_URL" | gcloud secrets create SUPABASE_URL --data-file=-
+echo -n "YOUR_SUPABASE_KEY" | gcloud secrets create SUPABASE_SERVICE_KEY --data-file=-
+```
+
+These are automatically mounted by `deploy.sh` and `cloudbuild.yaml`.
+
+---
+
+## Third-Party Disclosure
+
+This project is built on a fork of Google's Immergo language learning demo (open-source, Apache 2.0 license, listed as an official hackathon resource) by Zack Akil. The 3D avatar rendering uses the TalkingHead library (MIT license) by Mika Suominen (met4citizen) with the HeadAudio module for real-time lip-sync. Avatar models are created via Ready Player Me. The adaptive coaching engine, personality profiling system, 12-principle coaching framework, multilingual L1 interference patterns, bilingual coaching logic, vision-aware coaching rules, avatar mood mapping, split-screen demonstration view, and all system instruction generation logic are original work created during the contest period.
 
 ---
 

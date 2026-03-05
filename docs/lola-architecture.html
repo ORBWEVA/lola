@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>LoLA Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a1a;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: #e2e8f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  .diagram {
+    width: 1120px;
+    position: relative;
+  }
+
+  .title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #818cf8, #6ee7b7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .title p {
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 6px;
+  }
+
+  /* Layer containers */
+  .layer {
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .layer-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .layer-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Browser layer — indigo */
+  .browser {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.03));
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+  .browser .layer-label { color: #818cf8; }
+  .browser .dot { background: #818cf8; }
+
+  /* Cloud Run layer — emerald */
+  .cloudrun {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.03));
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+  .cloudrun .layer-label { color: #6ee7b7; }
+  .cloudrun .dot { background: #6ee7b7; }
+
+  /* Bottom services */
+  .services {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Gemini — blue */
+  .gemini {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
+    border: 1px solid rgba(59, 130, 246, 0.25);
+  }
+  .gemini .layer-label { color: #60a5fa; }
+  .gemini .dot { background: #60a5fa; }
+
+  /* Supabase — green/amber */
+  .supabase {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(52, 211, 153, 0.03));
+    border: 1px solid rgba(52, 211, 153, 0.25);
+  }
+  .supabase .layer-label { color: #34d399; }
+  .supabase .dot { background: #34d399; }
+
+  /* Boxes inside layers */
+  .boxes {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .box-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+  }
+
+  .box-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+
+  /* Sub-section inside browser for media */
+  .media-section {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 10px;
+  }
+
+  .media-section .sub-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #a5b4fc;
+    margin-bottom: 10px;
+  }
+
+  /* Connector between layers */
+  .connector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 0;
+    position: relative;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.15));
+  }
+
+  .connector-label {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f0f2a;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    white-space: nowrap;
+  }
+
+  .connector-split {
+    display: flex;
+    justify-content: center;
+    gap: 200px;
+    padding: 6px 0;
+  }
+
+  .connector-split .branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .connector-split .connector-line {
+    height: 20px;
+  }
+
+  /* Fork line */
+  .fork {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px 0;
+    position: relative;
+  }
+
+  .fork-line {
+    width: 400px;
+    height: 2px;
+    background: rgba(148, 163, 184, 0.2);
+    position: relative;
+  }
+
+  .fork-line::before,
+  .fork-line::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 14px;
+    background: rgba(148, 163, 184, 0.3);
+    bottom: 0;
+  }
+
+  .fork-line::before { left: 0; }
+  .fork-line::after { right: 0; }
+
+  /* Split connector with label */
+  .split-connector {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+  }
+
+  .split-connector .connector-line {
+    height: 20px;
+  }
+
+  .watermark {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #475569;
+  }
+</style>
+</head>
+<body>
+<div class="diagram">
+
+  <div class="title">
+    <h1>LoLA — System Architecture</h1>
+    <p>Loka Learning Avatar &mdash; Adaptive Language Coaching</p>
+  </div>
+
+  <!-- Browser Layer -->
+  <div class="layer browser">
+    <div class="layer-label"><span class="dot"></span>Browser (Vanilla JS + Vite)</div>
+    <div class="boxes">
+      <div class="box">
+        <div class="box-title">Onboarding</div>
+        <div class="box-desc">5-question quiz<br>L1 select &rarr; coaching profile</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Voice Chat</div>
+        <div class="box-desc">Expression carousel<br>Real-time waveforms</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Split-Screen</div>
+        <div class="box-desc">Two coaches side-by-side<br>Same mic, different responses</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Dashboard</div>
+        <div class="box-desc">Session history<br>Transcripts &amp; credits</div>
+      </div>
+    </div>
+    <div class="media-section">
+      <div class="sub-label">Media Layer</div>
+      <div class="boxes">
+        <div class="box">
+          <div class="box-title">AudioWorklets</div>
+          <div class="box-desc">Capture + playback processors</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Camera</div>
+          <div class="box-desc">1 FPS &rarr; JPEG snapshots</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Expressions</div>
+          <div class="box-desc">8 pre-rendered per profile</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Waveforms</div>
+          <div class="box-desc">AnalyserNode visualization</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connector: Browser → Cloud Run -->
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-label">WebSocket &mdash; PCM audio + JPEG frames + JSON</div>
+  </div>
+
+  <!-- Cloud Run Layer -->
+  <div class="layer cloudrun">
+    <div class="layer-label"><span class="dot"></span>Cloud Run (FastAPI)</div>
+    <div class="boxes">
+      <div class="box">
+        <div class="box-title">Profile Engine</div>
+        <div class="box-desc">5 answers &rarr; coaching personality</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Instruction Engine</div>
+        <div class="box-desc">Profile + L1 patterns + 12 principles &rarr; system instruction</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Gemini Session Manager</div>
+        <div class="box-desc">Audio + video + transcription proxy</div>
+      </div>
+      <div class="box">
+        <div class="box-title">L1 Patterns</div>
+        <div class="box-desc">JA &rarr; EN | KO &rarr; EN | EN &rarr; JA</div>
+      </div>
+      <div class="box">
+        <div class="box-title">Supabase Client</div>
+        <div class="box-desc">Session + transcript persistence</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fork to Gemini + Supabase -->
+  <div class="split-connector">
+    <div class="connector-line"></div>
+  </div>
+  <div class="fork">
+    <div class="fork-line"></div>
+  </div>
+
+  <!-- Bottom services -->
+  <div class="services">
+    <!-- Gemini -->
+    <div class="layer gemini">
+      <div class="layer-label"><span class="dot"></span>Gemini 2.5 Flash Native Audio</div>
+      <div class="boxes" style="flex-direction: column;">
+        <div class="box">
+          <div class="box-title">Real-time Audio Dialog</div>
+          <div class="box-desc">Bidirectional native audio streaming</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Input/Output Transcription</div>
+          <div class="box-desc">Automatic speech-to-text both directions</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Vision</div>
+          <div class="box-desc">Notebook reading + environment awareness</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase -->
+    <div class="layer supabase">
+      <div class="layer-label"><span class="dot"></span>Supabase (PostgreSQL)</div>
+      <div class="boxes" style="flex-direction: column;">
+        <div class="box">
+          <div class="box-title">devices</div>
+          <div class="box-desc">Anonymous device fingerprints + credits</div>
+        </div>
+        <div class="box">
+          <div class="box-title">sessions</div>
+          <div class="box-desc">Coaching session metadata + profiles</div>
+        </div>
+        <div class="box">
+          <div class="box-title">transcript_entries</div>
+          <div class="box-desc">Turn-by-turn conversation logs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="watermark">LoLA &mdash; Built by ORBWEVA for the Gemini Live Agent Challenge</div>
+
+</div>
+</body>
+</html>
