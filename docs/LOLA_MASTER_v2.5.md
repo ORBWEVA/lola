@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.4 — 2026-03-05)
+# LoLA — Loka Learning Avatar Master Reference (v2.5 — 2026-03-05)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.5 | 2026-03-05T14:00:00Z | Claude Code (Opus 4.6) | README update for Devpost submission: live demo URL updated to new Cloud Run service, Supabase added to Mermaid architecture diagram (devices/sessions/transcript_entries + Dashboard node + Supabase Client), project structure updated (db.py, view-dashboard.js, view-educator.js, supabase/migrations/), Supabase row in tech stack table, SUPABASE_URL/SUPABASE_SERVICE_KEY in env vars, Cloud Run Secrets section, third-party disclosure section (hackathon §15 compliance). Branded architecture PNG re-rendered with Supabase layer via Playwright. |
 | 2.4 | 2026-03-05T12:00:00Z | Claude Code (Opus 4.6) | Supabase persistence layer (Phase 3): devices/sessions/transcript_entries schema, backend API endpoints (POST /api/devices, POST /api/sessions/start, POST /api/sessions/end, GET /api/sessions/{device_id}, GET /api/transcripts/{session_id}), frontend device_id in localStorage, transcript accumulation during sessions, dashboard wired to real data (credits, session count, total minutes), Transcripts card functional with session list + transcript detail overlay. Graceful fallback when Supabase not configured. |
 | 2.3 | 2026-03-05T08:00:00Z | Claude Code (Opus 4.6) | Dashboard view (Screen 03): credits bar, profile/recordings/transcripts/reports cards with glass UI, coming soon section, post-session navigation flow (End Session → dashboard instead of landing), bottom action bar with Start New Session + Back. |
 | 2.2 | 2026-03-05T06:00:00Z | Claude Code (Opus 4.6) | Immersive session view redesign: full-screen avatar with gradient overlay, glass speech bubble for live transcript on mobile, desktop side-by-side layout (3fr avatar / 2fr transcript), auto-start on session entry (no Start button), burger menu with End Session + Camera toggle, session timer pill, expression carousel fullbleed mode. |
@@ -591,7 +592,7 @@ Migration: `supabase/migrations/001_create_persistence_tables.sql`
 | 5-question onboarding UI (L1 selection + questions) | DONE | `view-lola.js` — L1 picker → 5 adaptive questions → profile generation |
 | Split-screen demo view (dual sessions) | DONE | `split-screen.js` — shared mic, dual WebSockets, click-to-listen, independent waveforms + transcripts |
 | Cloud Run deployment | DONE | `scripts/deploy.sh` (one-command) + `cloudbuild.yaml` (CI/CD). Multi-stage Dockerfile. |
-| README + architecture diagram | DONE | Mermaid diagram in README + branded PNG (`docs/lola-architecture.png`, 1600x900) for Devpost upload. Source: `docs/architecture-diagram.html`. |
+| README + architecture diagram | DONE | Mermaid diagram in README (includes Supabase layer) + branded PNG (`docs/lola-architecture.png`) for Devpost upload. Source: `docs/lola-architecture.html`. Live demo URL, env vars, Cloud Run secrets, third-party disclosure all documented. |
 | Educator dashboard mock | DONE | `src/components/view-educator.js` — glassmorphism cards (Build Avatar, 12-Principle Auto-Apply, Monetize), stats mockup, Q2 2026 badge. Routed from landing "Educator Preview" link. |
 | User dashboard (Screen 03) | DONE | `src/components/view-dashboard.js` — credits bar (8 credits), profile/recordings/transcripts/reports cards (glass UI), coming soon section, post-session navigation (End Session → dashboard), Start New Session + Back buttons. |
 | Demo video — Remotion scaffold | DONE | `video/` — Remotion 4.0 project. Branded intro/outro, problem, architecture, multi-domain, close sequences. 3 screen capture placeholders. |
@@ -605,7 +606,7 @@ Migration: `supabase/migrations/001_create_persistence_tables.sql`
 - [ ] Video generator workflow (S1-W02)
 - [ ] Content publisher workflow (S1-W03)
 - [ ] First AI influencer live on social media
-- [ ] Learning data persistence (Supabase)
+- [x] Learning data persistence (Supabase) — DONE (v2.4)
 - [ ] Big Five mapping (v1 personality integration)
 
 ### Q2 2026
