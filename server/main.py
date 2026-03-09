@@ -351,6 +351,29 @@ async def _generate_report_background(session_id: str):
             pass
 
 
+@app.post("/api/sessions/feedback")
+async def session_feedback(request: Request):
+    """Store post-session feedback (rating + optional text). Non-critical."""
+    data = await request.json()
+    session_id = data.get("session_id")
+    rating = data.get("rating")
+    text = data.get("text", "")
+
+    if not session_id or not rating:
+        return {"ok": False}
+
+    # Store in-memory for hackathon (no DB table needed)
+    if not hasattr(app.state, "feedback"):
+        app.state.feedback = []
+    app.state.feedback.append({
+        "session_id": session_id,
+        "rating": rating,
+        "text": text,
+    })
+    logger.info(f"Feedback for {session_id}: rating={rating}, text={text[:50] if text else ''}")
+    return {"ok": True}
+
+
 @app.get("/api/sessions/{device_id}")
 async def get_sessions(device_id: str):
     """Return session history for a device (newest first)."""
@@ -429,6 +452,37 @@ async def get_reports(device_id: str):
     # Sort by session date descending
     merged.sort(key=lambda x: x.get("started_at", ""), reverse=True)
     return {"reports": merged}
+
+
+# ─── Avatar Endpoints ─────────────────────────────────────────────────
+
+@app.post("/api/avatars")
+async def create_avatar(request: Request):
+    """Create a custom avatar config. In-memory for hackathon."""
+    data = await request.json()
+    avatar_id = str(uuid.uuid4())[:8]
+    avatar = {
+        "id": avatar_id,
+        "name": data.get("name", "My Avatar"),
+        "domain": data.get("domain", "language_coaching"),
+        "personality": data.get("personality", []),
+        "appearance": data.get("appearance", "adult-female"),
+        "voice": data.get("voice", "Kore"),
+        "tagline": data.get("tagline", ""),
+    }
+    if not hasattr(app.state, "avatars"):
+        app.state.avatars = []
+    app.state.avatars.append(avatar)
+    logger.info(f"Avatar created: {avatar['name']} ({avatar_id})")
+    return avatar
+
+
+@app.get("/api/avatars")
+async def list_avatars():
+    """List all created avatars."""
+    if not hasattr(app.state, "avatars"):
+        return {"avatars": []}
+    return {"avatars": app.state.avatars}
 
 
 @app.get("/{full_path:path}")

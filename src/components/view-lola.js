@@ -1403,6 +1403,131 @@ class ViewLola extends HTMLElement {
           transform: scaleX(-1);
         }
 
+        /* ─── Hint overlay ─── */
+        .session-hint {
+          position: absolute;
+          inset: 0;
+          z-index: 8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          transition: opacity 0.8s ease-out;
+        }
+        .session-hint.hidden { opacity: 0; }
+        .session-hint-inner {
+          text-align: center;
+          animation: hint-breathe 3s ease-in-out infinite;
+        }
+        .session-hint-text {
+          font-size: 1.25rem;
+          font-weight: 300;
+          color: rgba(255, 255, 255, 0.6);
+          letter-spacing: 0.05em;
+        }
+        .session-hint-sub {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.3);
+          margin-top: 8px;
+        }
+        @keyframes hint-breathe {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        /* ─── Live dot ─── */
+        .live-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--lola-success, #06d6a0);
+          animation: live-pulse 2s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        @keyframes live-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+
+        /* ─── Mic mute toggle ─── */
+        .mic-mute-btn {
+          background: none;
+          border: 1px solid rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.7);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+        .mic-mute-btn:hover { background: rgba(255,255,255,0.1); }
+        .mic-mute-btn.muted {
+          background: var(--lola-error, #ef476f);
+          border-color: var(--lola-error, #ef476f);
+          color: white;
+        }
+
+        /* ─── Error screen ─── */
+        .session-error {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          background: var(--lola-bg, #0a0a1a);
+          padding: 24px;
+          text-align: center;
+        }
+        .error-icon {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .error-icon.warn { background: rgba(255, 209, 102, 0.15); color: var(--lola-warning, #ffd166); }
+        .error-icon.fail { background: rgba(239, 71, 111, 0.15); color: var(--lola-error, #ef476f); }
+        .error-title {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--lola-text, #f0f0f8);
+        }
+        .error-desc {
+          font-size: 0.9rem;
+          color: var(--lola-text-secondary, #9595b0);
+          max-width: 320px;
+          line-height: 1.5;
+        }
+        .error-btn {
+          padding: 12px 32px;
+          border-radius: var(--radius-sm, 8px);
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 0.9rem;
+          margin-top: 8px;
+          transition: all 0.2s;
+        }
+        .error-btn-primary {
+          background: var(--lola-indigo, #4361ee);
+          color: white;
+        }
+        .error-btn-primary:hover { filter: brightness(1.1); }
+        .error-btn-secondary {
+          background: transparent;
+          color: var(--lola-text-secondary, #9595b0);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .error-btn-secondary:hover { border-color: rgba(255,255,255,0.3); }
+
         /* ─── Frustration glow ─── */
         .frustration-active .session-avatar {
           box-shadow: inset 0 0 60px rgba(245, 158, 11, 0.3);
@@ -1514,6 +1639,14 @@ class ViewLola extends HTMLElement {
           </div>
           <div class="session-gradient"></div>
 
+          <!-- Hint overlay -->
+          <div class="session-hint" id="session-hint">
+            <div class="session-hint-inner">
+              <p class="session-hint-text">Just start talking</p>
+              <p class="session-hint-sub">LoLA is listening</p>
+            </div>
+          </div>
+
           <!-- Mobile: Top bar -->
           <div class="session-topbar">
             <div class="topbar-left">
@@ -1536,7 +1669,8 @@ class ViewLola extends HTMLElement {
               </div>
             </div>
             <div class="topbar-center">
-              <span class="profile-badge">${this._profileLabel}</span>
+              <div class="live-dot"></div>
+              <span class="profile-badge">LoLA</span>
             </div>
             <div class="topbar-right">
               <span class="timer-pill" id="session-timer">0:00</span>
@@ -1551,6 +1685,12 @@ class ViewLola extends HTMLElement {
 
           <!-- Waveform bar (bottom of left/avatar area) -->
           <div class="session-waveform-bar">
+            <button class="mic-mute-btn" id="mic-mute-btn" aria-label="Mute microphone">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button class="mic-mute-btn" id="camera-toggle-btn" aria-label="Toggle camera">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </button>
             <div class="wf-bar-track">
               <audio-visualizer id="avatar-viz" color="#4361ee"></audio-visualizer>
             </div>
@@ -1568,7 +1708,8 @@ class ViewLola extends HTMLElement {
             <button class="burger-btn" id="desktop-back" title="End session">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             </button>
-            <span class="profile-badge">${this._profileLabel}</span>
+            <div class="live-dot"></div>
+            <span class="profile-badge">LoLA — ${this._profileLabel}</span>
             <span style="flex:1"></span>
             <span class="timer-pill" id="desktop-timer">0:00</span>
           </div>
@@ -1619,7 +1760,17 @@ class ViewLola extends HTMLElement {
 
       this.dispatchEvent(new CustomEvent('navigate', {
         bubbles: true,
-        detail: { view: 'dashboard', profileData: this._activeProfile, sessionData }
+        detail: {
+          view: 'session-summary',
+          sessionData: {
+            ...(sessionData || {}),
+            duration,
+            profileLabel: this._profileLabel,
+            profileKey: this._profileKey,
+            transcriptCount: transcriptLog.length,
+            frustrationCount,
+          },
+        }
       }));
     };
 
@@ -1638,6 +1789,24 @@ class ViewLola extends HTMLElement {
     });
     this.querySelector("#menu-end-session").addEventListener("click", endSession);
     this.querySelector("#menu-camera-toggle").addEventListener("click", () => this.toggleCamera());
+
+    // Mic mute toggle
+    this._micMuted = false;
+    this.querySelector("#mic-mute-btn").addEventListener("click", () => {
+      this._micMuted = !this._micMuted;
+      const btn = this.querySelector("#mic-mute-btn");
+      btn.classList.toggle("muted", this._micMuted);
+      if (this.audioStreamer) {
+        const track = this.audioStreamer.stream?.getAudioTracks()[0];
+        if (track) track.enabled = !this._micMuted;
+      }
+      btn.innerHTML = this._micMuted
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.13 1.49-.35 2.17"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+    });
+
+    // Camera toggle (visible button in waveform bar)
+    this.querySelector("#camera-toggle-btn").addEventListener("click", () => this.toggleCamera());
 
     // Desktop controls
     this.querySelector("#desktop-back").addEventListener("click", endSession);
@@ -1707,11 +1876,20 @@ class ViewLola extends HTMLElement {
 
     try {
       this.client = new GeminiLiveAPI();
-      this.client.setSystemInstructions(this._systemInstruction);
+      // Use avatar config if launched from creator wizard
+      if (this.avatarConfig) {
+        const ac = this.avatarConfig;
+        const traits = (ac.personality || []).join(', ');
+        const avatarInstruction = `You are ${ac.name}, an AI ${ac.domain.replace(/_/g, ' ')} coach. Your personality traits: ${traits}. ${ac.tagline || ''} Adapt to the learner's needs.`;
+        this.client.setSystemInstructions(this._systemInstruction || avatarInstruction);
+        this.client.setVoice(ac.voice || "Kore");
+      } else {
+        this.client.setSystemInstructions(this._systemInstruction);
+        const voice = this._l1 === "en" ? "Puck" : "Kore";
+        this.client.setVoice(voice);
+      }
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
-      const voice = this._l1 === "en" ? "Puck" : "Kore";
-      this.client.setVoice(voice);
 
       this.client.onReceiveResponse = (response) => {
         if (response.type === MultimodalLiveResponseType.AUDIO) {
@@ -1735,6 +1913,10 @@ class ViewLola extends HTMLElement {
         } else if (
           response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION
         ) {
+          // Dismiss hint on first speech
+          const hint = this.querySelector("#session-hint");
+          if (hint && !hint.classList.contains("hidden")) hint.classList.add("hidden");
+
           const transcript = this.querySelector("#desktop-transcript") || this.querySelector("live-transcript");
           if (transcript)
             transcript.addInputTranscript(
@@ -1766,12 +1948,19 @@ class ViewLola extends HTMLElement {
         }
       };
 
-      this.client.onError = (e) => console.error("Gemini error:", e);
+      this.client.onError = (e) => {
+        console.error("Gemini error:", e);
+      };
       this.client.onClose = () => {
-        this._setStatus("Disconnected");
-        this.sessionActive = false;
-        const dot = this.querySelector("#mic-dot");
-        if (dot) dot.classList.add("inactive");
+        if (this.sessionActive) {
+          this.cleanup();
+          this._stopTimer();
+          this._showError('connection_lost');
+        } else {
+          this._setStatus("Disconnected");
+          const dot = this.querySelector("#mic-dot");
+          if (dot) dot.classList.add("inactive");
+        }
       };
 
       let token = null;
@@ -1838,7 +2027,14 @@ class ViewLola extends HTMLElement {
       this._startTimer();
     } catch (e) {
       console.error("Session start failed:", e);
-      this._setStatus("Failed: " + e.message);
+      this.cleanup();
+      this._stopTimer();
+      const msg = (e.message || '').toLowerCase();
+      if (msg.includes('permission') || msg.includes('not allowed') || msg.includes('denied')) {
+        this._showError('mic_denied');
+      } else {
+        this._showError('session_failed');
+      }
     }
   }
 
@@ -1943,6 +2139,7 @@ class ViewLola extends HTMLElement {
     const previewContainer = this.querySelector("#lola-camera-preview");
     const menuLabel = this.querySelector("#menu-camera-label");
     const desktopBtn = this.querySelector("#desktop-camera");
+    const toggleBtn = this.querySelector("#camera-toggle-btn");
 
     if (this.cameraActive) {
       if (this.videoStreamer) this.videoStreamer.stop();
@@ -1950,6 +2147,7 @@ class ViewLola extends HTMLElement {
       this.cameraActive = false;
       if (menuLabel) menuLabel.textContent = "Camera On";
       if (desktopBtn) { desktopBtn.classList.remove("active"); desktopBtn.textContent = "Camera"; }
+      if (toggleBtn) toggleBtn.classList.remove("muted"); // reuse .muted style as "active" indicator (inverted)
       if (previewContainer) {
         previewContainer.style.display = "none";
         previewContainer.innerHTML = "";
@@ -1978,9 +2176,83 @@ class ViewLola extends HTMLElement {
       this.cameraActive = true;
       if (menuLabel) menuLabel.textContent = "Camera Off";
       if (desktopBtn) { desktopBtn.classList.add("active"); desktopBtn.textContent = "Camera ON"; }
+
+      // Style the toggle button as active (sky blue)
+      if (toggleBtn) {
+        toggleBtn.style.background = "var(--lola-sky, #4cc9f0)";
+        toggleBtn.style.borderColor = "var(--lola-sky, #4cc9f0)";
+        toggleBtn.style.color = "white";
+      }
+
+      // Notify Gemini that vision input is now active
+      if (this.client) {
+        this.client.sendContextUpdate("vision", "Camera is now active. The learner may show you objects, text, menus, or signs. Describe what you see and incorporate it into coaching naturally.");
+      }
     } catch (e) {
       console.error("Camera failed:", e);
+      // Reset toggle button style on failure
+      if (toggleBtn) {
+        toggleBtn.style.background = "";
+        toggleBtn.style.borderColor = "";
+        toggleBtn.style.color = "";
+      }
     }
+  }
+
+  // ─── Error Screens ──────────────────────────────────────────────
+
+  _showError(type) {
+    const errors = {
+      mic_denied: {
+        icon: 'warn',
+        title: 'Microphone Access Needed',
+        desc: 'LoLA needs your microphone to have a conversation. Please allow microphone access in your browser settings and try again.',
+        primary: 'Try Again',
+        primaryAction: () => this.showSession(),
+      },
+      connection_lost: {
+        icon: 'fail',
+        title: 'Connection Lost',
+        desc: 'The connection to LoLA was interrupted. This can happen with unstable networks.',
+        primary: 'Reconnect',
+        primaryAction: () => this.showSession(),
+      },
+      session_failed: {
+        icon: 'fail',
+        title: 'Session Failed',
+        desc: 'Something went wrong starting your session. Please try again.',
+        primary: 'Try Again',
+        primaryAction: () => this.showSession(),
+      },
+    };
+
+    const err = errors[type] || errors.session_failed;
+    const errorEl = document.createElement('div');
+    errorEl.className = 'session-error';
+    errorEl.innerHTML = `
+      <div class="error-icon ${err.icon}">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${err.icon === 'warn'
+            ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+            : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'}
+        </svg>
+      </div>
+      <h2 class="error-title">${err.title}</h2>
+      <p class="error-desc">${err.desc}</p>
+      <button class="error-btn error-btn-primary" id="error-primary">${err.primary}</button>
+      <button class="error-btn error-btn-secondary" id="error-back">Back to Home</button>
+    `;
+
+    this.innerHTML = '';
+    this.appendChild(errorEl);
+
+    this.querySelector('#error-primary').addEventListener('click', () => err.primaryAction());
+    this.querySelector('#error-back').addEventListener('click', () => {
+      this.dispatchEvent(new CustomEvent('navigate', {
+        bubbles: true,
+        detail: { view: 'landing' }
+      }));
+    });
   }
 
   // ─── Cleanup ─────────────────────────────────────────────────────

@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+import './view-landing.js';
 import './view-splash.js';
 import './view-missions.js';
 import './view-chat.js';
 import './view-summary.js';
+import './view-session-summary.js';
+import './view-demo.js';
+import './view-creator.js';
 import './view-lola.js';
 import './split-screen.js';
 import './view-educator.js';
@@ -28,7 +32,7 @@ class AppRoot extends HTMLElement {
     constructor() {
         super();
         this.state = {
-            view: 'lola', // lola, split, splash, missions, chat, summary
+            view: 'landing', // landing, lola, split, splash, missions, chat, summary
             selectedMission: null,
             selectedLanguage: null,
             sessionResult: null
@@ -97,6 +101,7 @@ class AppRoot extends HTMLElement {
             if (e.detail.result) this.state.sessionResult = e.detail.result;
             if (e.detail.profileData) this.state.profileData = e.detail.profileData;
             if (e.detail.sessionData) this.state.sessionData = e.detail.sessionData;
+            if (e.detail.avatarConfig) this.state.avatarConfig = e.detail.avatarConfig;
             this.render();
         });
     }
@@ -150,7 +155,14 @@ class AppRoot extends HTMLElement {
         this.viewContainer.innerHTML = '';
         let currentView;
 
+        // Hide header on landing page (it has its own logo/menu)
+        const header = this.querySelector('header');
+        if (header) header.style.display = this.state.view === 'landing' ? 'none' : 'flex';
+
         switch (this.state.view) {
+            case 'landing':
+                currentView = document.createElement('view-landing');
+                break;
             case 'splash':
                 currentView = document.createElement('view-splash');
                 break;
@@ -166,6 +178,10 @@ class AppRoot extends HTMLElement {
                 break;
             case 'lola':
                 currentView = document.createElement('view-lola');
+                if (this.state.avatarConfig) currentView.avatarConfig = this.state.avatarConfig;
+                break;
+            case 'creator':
+                currentView = document.createElement('view-creator');
                 break;
             case 'split':
                 currentView = document.createElement('split-screen');
@@ -177,6 +193,13 @@ class AppRoot extends HTMLElement {
                 currentView = document.createElement('view-dashboard');
                 currentView.profileData = this.state.profileData;
                 currentView.sessionData = this.state.sessionData;
+                break;
+            case 'session-summary':
+                currentView = document.createElement('view-session-summary');
+                currentView.sessionData = this.state.sessionData;
+                break;
+            case 'demo':
+                currentView = document.createElement('view-demo');
                 break;
             case 'summary':
                 currentView = document.createElement('view-summary');

@@ -23,20 +23,36 @@ The split-screen demo runs both sessions simultaneously — same mic input, two 
 
 ---
 
+## Features
+
+- **Video landing page** with word-by-word subtitle sync, canvas waveform, and browser-language detection (8 languages)
+- **3D TalkingHead avatar** with real-time lip sync from Gemini audio output
+- **Vision input** — point your camera at a menu, sign, or notebook and LoLA coaches from what it sees
+- **Creator wizard** — build a custom coaching avatar in 5 steps (name, domain, personality, appearance, voice)
+- **"Same Error, Different Coaching" demo** — side-by-side proof that LoLA adapts to the learner, not just the mistake
+- **Post-session summary** with stats, 3-point rating, and optional text feedback
+- **12-principle coaching engine** generating unique system instructions per learner profile
+- **L1 interference patterns** for Japanese, Korean, and English learners
+- **Natural barge-in** via Gemini native audio — interrupt LoLA mid-sentence naturally
+
+---
+
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph Browser["Browser (Vanilla JS + Vite)"]
+        LP["Landing Page<br/>Video hero + subtitle sync + waveform"]
+        CW["Creator Wizard<br/>5-step avatar builder"]
         OB["5-Question Onboarding<br/>L1 select → quiz → profile"]
-        VC["Voice Chat Session<br/>Expression carousel + waveforms"]
-        SS["Split-Screen Demo<br/>Two coaches side-by-side"]
-        DB["User Dashboard<br/>Sessions, transcripts, credits"]
+        VC["Voice Chat Session<br/>TalkingHead 3D avatar + lip sync"]
+        DM["Coaching Demo<br/>Same error, different coaching"]
+        SM["Session Summary<br/>Stats + rating + feedback"]
 
         subgraph Media["Media Layer"]
             WA["Web Audio API<br/>AudioWorklets (capture + playback)"]
             CAM["Camera (1 FPS)<br/>getUserMedia → JPEG"]
-            EC["Expression Carousel<br/>8 pre-rendered expressions"]
+            TH["TalkingHead 3D<br/>ThreeJS morph targets"]
             AV["Audio Visualizer<br/>AnalyserNode waveforms"]
         end
     end
@@ -207,16 +223,22 @@ lola/
 │       └── english.py          # EN→JA patterns + L1 bridges
 ├── src/                        # Frontend (Vanilla JS Web Components)
 │   ├── components/
-│   │   ├── view-lola.js        # Main session — onboarding + voice chat
+│   │   ├── app-root.js         # SPA router — view switching + state management
+│   │   ├── view-landing.js     # Landing page — video hero + subtitles + waveform
+│   │   ├── view-lola.js        # Main session — onboarding + voice chat + TalkingHead
+│   │   ├── view-creator.js     # 5-step avatar creation wizard
+│   │   ├── view-demo.js        # "Same Error, Different Coaching" comparison
+│   │   ├── view-session-summary.js  # Post-session stats + rating + feedback
 │   │   ├── view-dashboard.js   # User dashboard — sessions, transcripts, credits
-│   │   ├── view-educator.js    # Educator preview dashboard
 │   │   ├── split-screen.js     # Dual-session demo view
-│   │   ├── expression-carousel.js  # Avatar expression image crossfade
-│   │   ├── audio-visualizer.js # Guitar-string waveform via AnalyserNode
 │   │   └── live-transcript.js  # Real-time transcript bubbles
-│   └── lib/gemini-live/        # Gemini Live API client + media utilities
+│   └── lib/
+│       ├── gemini-live/        # Gemini Live API client + media utilities
+│       ├── subtitle-sync.js    # Video subtitle sync engine (rAF + word timing)
+│       └── waveform.js         # Canvas 48-bar waveform renderer
 ├── public/
-│   ├── avatars/                # Pre-rendered expression images (FLUX Kontext)
+│   ├── hero-combined.mp4       # Landing page hero video (avatar intros)
+│   ├── hero-combined-subtitles.json  # Per-word subtitle timing data
 │   └── audio-processors/       # AudioWorklet processors (capture + playback)
 ├── scripts/
 │   ├── dev.sh                  # Start local dev environment
@@ -238,10 +260,9 @@ lola/
 | LLM | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) |
 | Backend | Python 3.10 / FastAPI / `google-genai` SDK |
 | Frontend | Vanilla JS / Vite / Web Components / Web Audio API |
+| Avatar | TalkingHead v1.7 (`@met4citizen/talkinghead`) + ThreeJS — 3D lip-synced avatar |
 | Persistence | Supabase (PostgreSQL — sessions, transcripts, credits) |
-| Avatar | Pre-rendered FLUX Kontext Pro expressions (8 per profile) |
 | Deployment | Google Cloud Run |
-| Avatar generation | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI |
 
 ---
 
