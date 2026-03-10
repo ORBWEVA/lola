@@ -3,6 +3,12 @@
  * Proves LoLA is a platform, not a single-purpose app.
  */
 
+function esc(s) {
+  const d = document.createElement('div')
+  d.textContent = s
+  return d.innerHTML
+}
+
 const DOMAIN_ICONS = {
   language_coaching: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
   fitness: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
@@ -374,7 +380,7 @@ class ViewCreator extends HTMLElement {
     el.innerHTML = `
       <h2 class="creator-title">Name your avatar</h2>
       <p class="creator-desc">Choose a name and what domain they'll operate in.</p>
-      <input class="creator-input" id="avatar-name" placeholder="e.g. Luna, Coach Mike, Aria..." value="${this._data.name}" maxlength="30" />
+      <input class="creator-input" id="avatar-name" placeholder="e.g. Luna, Coach Mike, Aria..." value="${esc(this._data.name)}" maxlength="30" />
       <div class="domain-grid">
         ${DOMAINS.map(d => `
           <div class="domain-card${this._data.domain === d.id ? ' selected' : ''}" data-domain="${d.id}">
@@ -419,7 +425,7 @@ class ViewCreator extends HTMLElement {
     const chips = DOMAIN_PERSONALITIES[this._data.domain] || DOMAIN_PERSONALITIES.custom
     el.innerHTML = `
       <h2 class="creator-title">Define personality</h2>
-      <p class="creator-desc">Pick up to 3 traits for ${this._data.name || 'your avatar'}.</p>
+      <p class="creator-desc">Pick up to 3 traits for ${esc(this._data.name) || 'your avatar'}.</p>
       <div class="chip-grid">
         ${chips.map(c => `<button class="chip${this._data.personalities.includes(c) ? ' selected' : ''}" data-chip="${c}">${c}</button>`).join('')}
       </div>
@@ -527,11 +533,11 @@ class ViewCreator extends HTMLElement {
 
     el.innerHTML = `
       <h2 class="creator-title">Review & Launch</h2>
-      <p class="creator-desc">${this._data.tagline}</p>
+      <p class="creator-desc">${esc(this._data.tagline)}</p>
       <div class="review-card">
         <div class="review-row">
           <span class="review-label">Name</span>
-          <span class="review-value">${this._data.name}</span>
+          <span class="review-value">${esc(this._data.name)}</span>
         </div>
         <div class="review-row">
           <span class="review-label">Domain</span>
@@ -539,7 +545,7 @@ class ViewCreator extends HTMLElement {
         </div>
         <div class="review-row">
           <span class="review-label">Personality</span>
-          <span class="review-value">${this._data.personalities.join(', ')}</span>
+          <span class="review-value">${esc(this._data.personalities.join(', '))}</span>
         </div>
         <div class="review-row">
           <span class="review-label">Appearance</span>

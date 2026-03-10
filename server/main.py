@@ -488,11 +488,12 @@ async def list_avatars():
 @app.get("/{full_path:path}")
 @simpletrack("page_view")
 async def serve_spa(full_path: str):
-    # Serve file from dist if it exists
-    file_path = f"dist/{full_path}"
-    if full_path and os.path.exists(file_path) and os.path.isfile(file_path):
+    # Serve file from dist if it exists, with path traversal protection
+    dist_dir = os.path.realpath("dist")
+    file_path = os.path.realpath(os.path.join("dist", full_path))
+    if full_path and file_path.startswith(dist_dir + os.sep) and os.path.isfile(file_path):
         return FileResponse(file_path)
-    
+
     # Fallback to index.html for SPA routing
     return FileResponse("dist/index.html")
 

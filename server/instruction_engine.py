@@ -255,5 +255,6 @@ def generate_context_update(context_type: str, details: str = "") -> str:
     elif context_type == "success":
         return "[CONTEXT UPDATE: The learner just succeeded. Celebrate explicitly. Reference their progress. Build on this momentum.]"
     elif context_type == "topic_shift":
-        return f"[CONTEXT UPDATE: {details}]"
+        sanitized = details.replace("[", "").replace("]", "")[:200]
+        return f"[CONTEXT UPDATE: Topic shift — {sanitized}]"
     return ""
