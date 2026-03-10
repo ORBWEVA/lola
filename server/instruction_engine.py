@@ -123,6 +123,7 @@ EMOTIONAL APPROACH:
 
 LEARNER'S L1: {l1_name} ({l1_native})
 TARGET LANGUAGE: {target_lang} ({target_native})
+IMPORTANT: The learner speaks {l1_name} natively and will primarily speak in {l1_name}. All learner speech input is in {l1_name} unless they are practicing {target_lang}.
 
 L1-SPECIFIC INTERFERENCE PATTERNS (correct these when you hear them):
 {interference_lines}

@@ -104,11 +104,24 @@ L1 pattern files include `target_language` and `target_native` fields. The instr
 
 ## Coding Conventions
 
+### Brand & Design
+- **Canonical guide**: `docs/LOLA_BRAND_GUIDE_v1.md` — always defer to this for visual decisions
+- **Minimalistic, premium design** with generous whitespace (8pt grid spacing)
+- **No emojis** anywhere in the UI — they cheapen the look. Use SVG icons (Lucide-style, 1.5px stroke, rounded caps) or text instead.
+- **Dark mode default**; light mode via toggle (CSS vars in `body.light-mode`)
+- **Slide-out panels** from right for menus/overlays — use `.slide-panel` base class from `style.css`
+- **Nav links**: Exo 2 weight 300, left-aligned, generous padding, `--lola-text-secondary` → `--lola-text` on hover
+- **Icon buttons**: use `.icon-btn` base class — no background, `--lola-text-secondary` color
+- **Typography**: Exo 2 (display/body, weight 300-400 body, 600-700 headings), Space Mono (data/labels, uppercase, tracked), Noto Sans JP (Japanese)
+- **Color**: indigo/sky gradient for CTAs, rose for accents/warnings. Never pure white backgrounds.
+- **Shadows**: use inset white border on dark bg for depth (`--shadow-sm/md/lg`)
+- **Animation**: 200-300ms ease-out, calm not bouncy. See brand guide Motion section.
+
 ### Frontend
 - Vanilla JS with Web Components (Custom Elements) — no React/Vue/Angular
 - camelCase for JS, CSS variables from `style.css`
 - Mobile: use `env(safe-area-inset-*)` for fixed/absolute positioning
-- UI style: glassmorphism (`backdrop-filter: blur(20px)`, `var(--glass-border)`)
+- i18n: `src/lib/i18n.js` — use `t('key')` for all user-facing strings (8 languages)
 
 ### Backend
 - snake_case for Python
@@ -120,7 +133,8 @@ Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
 
 ## Reference Documents
 - `docs/LOLA_HACKATHON_SPEC.md` — build specification v2.2 (what to build, phases, submission checklist)
-- `docs/LOLA_MASTER_v2.8.md` — canonical master reference (coaching philosophy, 12 principles, competitive context, actual built state)
+- `docs/LOLA_MASTER_v2.10.md` — canonical master reference (coaching philosophy, 12 principles, competitive context, actual built state)
+- `docs/LOLA_BRAND_GUIDE_v1.md` — visual identity reference (colors, typography, spacing, component patterns, motion)
 - `GEMINI.md` — Immergo's original AI coding guide (base patterns)
 
 ## What NOT to Do

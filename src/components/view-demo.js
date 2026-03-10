@@ -3,6 +3,8 @@
  * Shows the same grammar mistake coached two different ways based on profile.
  */
 
+import { t } from '../lib/i18n.js'
+
 const DEMO_SCENARIOS = [
   {
     title: 'Grammar Correction',
@@ -286,7 +288,7 @@ class ViewDemo extends HTMLElement {
           <button class="demo-back" id="demo-back">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
-          <span class="demo-title">Same Error, Different Coaching</span>
+          <span class="demo-title">${t('sameErrorTitle')}</span>
         </div>
 
         <div class="demo-dots" id="demo-dots">
@@ -296,7 +298,7 @@ class ViewDemo extends HTMLElement {
         <div class="demo-scenario-label">${scenario.title}</div>
 
         <div class="demo-learner">
-          <div class="demo-learner-label">Learner says:</div>
+          <div class="demo-learner-label">${t('learnerSays')}</div>
           <div class="demo-learner-text">"${scenario.learnerSays}"</div>
         </div>
 
@@ -320,16 +322,13 @@ class ViewDemo extends HTMLElement {
         </div>
 
         <div class="demo-insight">
-          <div class="demo-insight-title">Same error. Different coaching.</div>
-          <div class="demo-insight-text">
-            LoLA's 12-principle coaching engine adapts explanations, tone, and pacing
-            based on a 5-question profile — not just the language mistake.
-          </div>
+          <div class="demo-insight-title">${t('sameError')}</div>
+          <div class="demo-insight-text">${t('demoInsight')}</div>
         </div>
 
         <div class="demo-nav">
-          <button class="demo-btn demo-btn-primary" id="demo-try">Try It Yourself</button>
-          <button class="demo-btn demo-btn-secondary" id="demo-replay">Replay</button>
+          <button class="demo-btn demo-btn-primary" id="demo-try">${t('tryYourself')}</button>
+          <button class="demo-btn demo-btn-secondary" id="demo-replay">${t('replay')}</button>
         </div>
       </div>
     `;

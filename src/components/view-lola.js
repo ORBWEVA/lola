@@ -411,7 +411,12 @@ class ViewLola extends HTMLElement {
 
   connectedCallback() {
     this._initDevice();
-    this.showLanding();
+    // Skip old splash when navigating from the new landing page
+    if (this.skipSplash) {
+      this.showL1Selection();
+    } else {
+      this.showLanding();
+    }
   }
 
   async _initDevice() {

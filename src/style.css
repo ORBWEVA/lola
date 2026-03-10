@@ -98,6 +98,110 @@
   --backdrop-blur: blur(var(--lola-glass-blur));
 }
 
+/* ─── Light Mode ────────────────────────────────────────── */
+body.light-mode {
+  --lola-bg: #f5f5fa;
+  --lola-surface: #ffffff;
+  --lola-surface-2: #eeeef4;
+  --lola-surface-3: #e0e0ea;
+
+  --lola-text: #1a1a2e;
+  --lola-text-secondary: #555570;
+  --lola-text-muted: #888899;
+  --lola-text-inverse: #f0f0f8;
+
+  --lola-overlay: rgba(245, 245, 250, 0.85);
+  --lola-glass: rgba(255, 255, 255, 0.75);
+  --lola-glass-border: rgba(0, 0, 0, 0.08);
+
+  --lola-border: rgba(0, 0, 0, 0.08);
+  --lola-border-hover: rgba(67, 97, 238, 0.3);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* ─── Component Patterns (Brand Guide) ─────────────────── */
+
+/* Slide-out menu panel — right-anchored, brand surface bg */
+.slide-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  width: 340px;
+  max-width: 85vw;
+  background: var(--lola-surface);
+  border-left: 1px solid var(--lola-border);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-panel.open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.slide-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out;
+}
+
+.slide-panel-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Nav links inside slide panel — brand typography */
+.slide-panel-link {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  color: var(--lola-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1.25rem 0;
+  text-align: left;
+  transition: color 0.2s;
+  border-bottom: 1px solid var(--lola-border);
+}
+
+.slide-panel-link:last-child {
+  border-bottom: none;
+}
+
+.slide-panel-link:hover {
+  color: var(--lola-text);
+}
+
+/* Icon buttons inside menus/panels */
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--lola-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.icon-btn:hover {
+  color: var(--lola-text);
+}
+
 body {
   background-color: var(--lola-bg);
   color: var(--lola-text);

@@ -1,5 +1,6 @@
 import { SubtitleSync } from '../lib/subtitle-sync.js'
 import { Waveform } from '../lib/waveform.js'
+import { t, getLang, setLang, LANGUAGES } from '../lib/i18n.js'
 
 const HERO_VIDEO = '/hero-combined.mp4'
 const HERO_SUBTITLES = '/hero-combined-subtitles.json'
@@ -189,6 +190,9 @@ class ViewLanding extends HTMLElement {
           width: 60%;
           max-width: 400px;
           height: 4rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
         }
 
         @media (min-width: 640px) {
@@ -298,6 +302,27 @@ class ViewLanding extends HTMLElement {
           color: rgba(255, 255, 255, 0.6);
         }
 
+
+        .landing-sound-btn {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.4);
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          padding: 0.5rem;
+          flex-shrink: 0;
+        }
+
+        .landing-sound-btn:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
+
+        .landing-sound-btn.unmuted {
+          color: rgba(255, 255, 255, 0.9);
+        }
+
         .landing-menu-btn {
           position: absolute;
           top: 0; right: 0;
@@ -312,6 +337,205 @@ class ViewLanding extends HTMLElement {
 
         .landing-menu-btn:hover {
           color: white;
+        }
+
+        .landing-menu-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 99;
+          background: rgba(0, 0, 0, 0.4);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s ease-out;
+        }
+
+        .landing-menu-backdrop.open {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .landing-menu-overlay {
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 100;
+          width: 340px;
+          max-width: 85vw;
+          background: var(--lola-surface, #12122a);
+          border-left: 1px solid var(--lola-border, rgba(255, 255, 255, 0.06));
+          display: flex;
+          flex-direction: column;
+          overflow: visible;
+          transform: translateX(100%);
+          pointer-events: none;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .landing-menu-overlay.open {
+          transform: translateX(0);
+          pointer-events: auto;
+        }
+
+        /* Top bar: theme icon | lang dropdown | close */
+        .landing-menu-topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem 1.5rem;
+          border-bottom: 1px solid var(--lola-border, rgba(255, 255, 255, 0.06));
+        }
+
+        .landing-menu-topbar-left {
+          display: flex;
+          align-items: center;
+        }
+
+        .landing-menu-topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .landing-menu-theme-btn {
+          background: none;
+          border: none;
+          color: var(--lola-text-secondary, #9595b0);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          transition: color 0.2s;
+        }
+
+        .landing-menu-theme-btn:hover {
+          color: var(--lola-text, #f0f0f8);
+        }
+
+        .landing-menu-lang-wrap {
+          position: relative;
+        }
+
+        .landing-menu-lang-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          color: var(--lola-text-secondary, #9595b0);
+          cursor: pointer;
+          padding: 4px;
+          font-size: 0.85rem;
+          transition: color 0.2s;
+        }
+
+        .landing-menu-lang-btn:hover {
+          color: var(--lola-text, #f0f0f8);
+        }
+
+        .landing-menu-lang-flag {
+          font-size: 1.25rem;
+          line-height: 1;
+        }
+
+        .landing-menu-lang-chevron {
+          transition: transform 0.2s;
+        }
+
+        .landing-menu-lang-btn.open .landing-menu-lang-chevron {
+          transform: rotate(180deg);
+        }
+
+        .landing-menu-lang-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 8px;
+          background: var(--lola-surface-2, #1a1a3a);
+          border: 1px solid var(--lola-border, rgba(255, 255, 255, 0.06));
+          border-radius: var(--radius-md, 12px);
+          padding: 4px;
+          display: none;
+          min-width: 160px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.08) inset;
+          z-index: 10;
+        }
+
+        .landing-menu-lang-dropdown.open {
+          display: block;
+        }
+
+        .landing-menu-lang-option {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 8px 12px;
+          background: none;
+          border: none;
+          color: var(--lola-text-secondary, #9595b0);
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-family: var(--font-body, system-ui);
+          border-radius: var(--radius-sm, 8px);
+          transition: all 0.15s;
+        }
+
+        .landing-menu-lang-option:hover {
+          background: rgba(255, 255, 255, 0.06);
+          color: var(--lola-text, #f0f0f8);
+        }
+
+        .landing-menu-lang-option.active {
+          color: var(--lola-sky, #4cc9f0);
+        }
+
+        .landing-menu-close {
+          background: none;
+          border: none;
+          color: var(--lola-text-secondary, #9595b0);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          transition: color 0.2s;
+        }
+
+        .landing-menu-close:hover {
+          color: var(--lola-text, #f0f0f8);
+        }
+
+        /* Nav links */
+        .landing-menu-nav {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 2rem 1.5rem;
+          gap: 0;
+        }
+
+        .landing-menu-link {
+          font-family: var(--font-display);
+          font-size: 1.5rem;
+          font-weight: 300;
+          letter-spacing: -0.3px;
+          color: var(--lola-text-secondary, #9595b0);
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 1.25rem 0;
+          text-align: left;
+          transition: color 0.2s;
+          border-bottom: 1px solid var(--lola-border, rgba(255, 255, 255, 0.06));
+        }
+
+        .landing-menu-link:last-child {
+          border-bottom: none;
+        }
+
+        .landing-menu-link:hover {
+          color: var(--lola-text, #f0f0f8);
         }
       </style>
 
@@ -345,16 +569,61 @@ class ViewLanding extends HTMLElement {
         <div class="landing-waveform-wrap">
           <div class="landing-waveform-inner">
             <canvas class="landing-waveform-canvas" id="waveform-canvas"></canvas>
+            <button class="landing-sound-btn" id="landing-sound-btn" aria-label="Toggle sound">
+              <svg id="sound-icon-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+              <svg id="sound-icon-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
         <div class="landing-dots" id="avatar-dots"></div>
 
         <div class="landing-cta">
-          <p class="landing-cta-tagline">AI avatars that coach, teach & adapt</p>
-          <button class="landing-cta-btn" id="cta-start">Start Coaching</button>
-          <button class="landing-cta-secondary" id="cta-demo">See how it adapts</button>
-          <button class="landing-cta-secondary" id="cta-creator">Create your own avatar</button>
+          <p class="landing-cta-tagline">${t('tagline')}</p>
+          <button class="landing-cta-btn" id="cta-start">${t('startCoaching')}</button>
+          <button class="landing-cta-secondary" id="cta-demo">${t('seeAdapts')}</button>
+          <button class="landing-cta-secondary" id="cta-creator">${t('createAvatar')}</button>
+        </div>
+
+        <div class="landing-menu-backdrop" id="landing-menu-backdrop"></div>
+        <div class="landing-menu-overlay" id="landing-menu-overlay">
+          <div class="landing-menu-topbar">
+            <div class="landing-menu-topbar-left">
+              <button class="landing-menu-theme-btn" id="menu-theme-btn" aria-label="Toggle theme">
+                ${document.body.classList.contains('light-mode')
+                  ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+                  : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'}
+              </button>
+            </div>
+            <div class="landing-menu-topbar-right">
+              <div class="landing-menu-lang-wrap" id="menu-lang-wrap">
+                <button class="landing-menu-lang-btn" id="menu-lang-btn">
+                  <span class="landing-menu-lang-flag">${LANGUAGES.find(l => l.code === getLang())?.flag || '\u{1F1EC}\u{1F1E7}'}</span>
+                  <svg class="landing-menu-lang-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="landing-menu-lang-dropdown" id="menu-lang-dropdown">
+                  ${LANGUAGES.map(l => `<button class="landing-menu-lang-option${l.code === getLang() ? ' active' : ''}" data-lang="${l.code}"><span class="landing-menu-lang-flag">${l.flag}</span>${l.label}</button>`).join('')}
+                </div>
+              </div>
+              <button class="landing-menu-close" id="landing-menu-close">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          <nav class="landing-menu-nav">
+            <button class="landing-menu-link" data-nav="landing">${t('home')}</button>
+            <button class="landing-menu-link" data-nav="demo">${t('demo')}</button>
+            <button class="landing-menu-link" data-nav="creator">${t('create')}</button>
+            <button class="landing-menu-link" data-nav="lola">${t('start')}</button>
+          </nav>
         </div>
       </div>
     `
@@ -462,6 +731,51 @@ class ViewLanding extends HTMLElement {
   }
 
   _bindEvents() {
+    // Language switcher (in menu topbar)
+    const menuLangBtn = this.querySelector('#menu-lang-btn')
+    const menuLangDropdown = this.querySelector('#menu-lang-dropdown')
+    const menuLangWrap = this.querySelector('#menu-lang-wrap')
+    menuLangBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      menuLangBtn.classList.toggle('open')
+      menuLangDropdown.classList.toggle('open')
+    })
+    menuLangDropdown.querySelectorAll('.landing-menu-lang-option').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation()
+        setLang(opt.dataset.lang)
+        this._browserLang = opt.dataset.lang
+        this._cleanup()
+        this.connectedCallback()
+      })
+    })
+    // Close lang dropdown on click outside the wrapper
+    this.querySelector('#landing-menu-overlay').addEventListener('click', (e) => {
+      if (!menuLangWrap.contains(e.target)) {
+        menuLangBtn.classList.remove('open')
+        menuLangDropdown.classList.remove('open')
+      }
+    })
+
+    // Theme toggle (icon)
+    this.querySelector('#menu-theme-btn').addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode')
+      localStorage.setItem('lola_theme', isLight ? 'light' : 'dark')
+      // Re-render to update icon
+      this._cleanup()
+      this.connectedCallback()
+    })
+
+    this.querySelector('#landing-sound-btn').addEventListener('click', () => {
+      this._video.muted = !this._video.muted
+      const btn = this.querySelector('#landing-sound-btn')
+      const iconOff = this.querySelector('#sound-icon-off')
+      const iconOn = this.querySelector('#sound-icon-on')
+      btn.classList.toggle('unmuted', !this._video.muted)
+      iconOff.style.display = this._video.muted ? '' : 'none'
+      iconOn.style.display = this._video.muted ? 'none' : ''
+    })
+
     this.querySelector('#cta-start').addEventListener('click', () => {
       this._cleanup()
       this.dispatchEvent(new CustomEvent('navigate', {
@@ -478,12 +792,25 @@ class ViewLanding extends HTMLElement {
       }))
     })
 
-    this.querySelector('#landing-menu-btn').addEventListener('click', () => {
-      this._cleanup()
-      this.dispatchEvent(new CustomEvent('navigate', {
-        bubbles: true,
-        detail: { view: 'lola' }
-      }))
+    // Menu slide-in panel
+    const overlay = this.querySelector('#landing-menu-overlay')
+    const backdrop = this.querySelector('#landing-menu-backdrop')
+    const openMenu = () => { overlay.classList.add('open'); backdrop.classList.add('open') }
+    const closeMenu = () => { overlay.classList.remove('open'); backdrop.classList.remove('open') }
+    this.querySelector('#landing-menu-btn').addEventListener('click', openMenu)
+    this.querySelector('#landing-menu-close').addEventListener('click', closeMenu)
+    backdrop.addEventListener('click', closeMenu)
+    overlay.querySelectorAll('.landing-menu-link').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMenu()
+        const view = link.dataset.nav
+        if (view === 'landing') return // already here
+        this._cleanup()
+        this.dispatchEvent(new CustomEvent('navigate', {
+          bubbles: true,
+          detail: { view }
+        }))
+      })
     })
 
     this.querySelector('#cta-creator').addEventListener('click', () => {

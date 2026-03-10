@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.9 — 2026-03-09)
+# LoLA — Loka Learning Avatar Master Reference (v2.10 — 2026-03-10)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.10 | 2026-03-10T04:00:00Z | Claude Code (Opus 4.6) | Brand guide alignment pass: slide-out menu redesigned to match LOLA_BRAND_GUIDE_v1 (right-anchored panel with solid `--lola-surface` background, Exo 2 weight 300 left-aligned nav links, top bar with sun/moon theme icon + flag/chevron language dropdown + X close, brand-correct shadows and borders). CSS updated with reusable `.slide-panel`, `.slide-panel-link`, `.icon-btn` component patterns from brand guide. i18n language switcher moved from landing page to menu panel. Dark/light mode toggle converted from text buttons to icon toggle. Instruction engine updated with explicit L1 language hint for Gemini input transcription accuracy. |
 | 2.9 | 2026-03-09T12:00:00Z | Claude Code (Opus 4.6) | Gemini Live Agent Challenge UX rebuild (Steps 1-7): Landing page with video hero, word-by-word subtitle sync, canvas waveform, browser language detection (8 langs). Session UI polish: hint overlay, live dot, mic mute, camera toggle with vision context, branded error screens, session-summary navigation. Post-session feedback endpoint. "Same Error, Different Coaching" demo (2 scenarios, A/B comparison). Creator wizard (5 steps: name+domain, personality, appearance, voice, review+launch) with backend avatar endpoints. README updated with features list, new project structure. Cloud Run deploy with MIN_INSTANCES=1. |
 | 2.8 | 2026-03-05T19:00:00Z | Claude Code (Opus 4.6) | Added "Fork Origin — Immergo" section documenting what the Immergo base provided vs. what LoLA built from scratch, why the fork was chosen, and attribution (Zack Akil, Apache 2.0, official hackathon resource). |
 | 2.7 | 2026-03-05T18:00:00Z | Claude Code (Opus 4.6) | Gemini hackathon submission deliverables: Playwright capture script (`scripts/capture-demo.js`) for screen recordings + 6 screenshots, architecture diagram updated with Report Engine/Text Analysis/session_reports nodes, Remotion video wired with real capture files (3 ScreenCapture segments), blog post finalized with GitHub raw image URLs + coaching reports section, Devpost checklist updated. |
@@ -526,7 +527,7 @@ The 12 principles were designed by synthesizing three complementary disciplines:
 | **LLM** | Gemini 2.5 Flash Native Audio (`gemini-2.5-flash-native-audio-preview-12-2025`) | Speech-to-speech coaching via Live API — no separate STT/TTS needed |
 | **Backend** | Python 3.10+ / FastAPI / `google-genai` SDK | WebSocket proxy between browser and Gemini Live API |
 | **Frontend** | Vanilla JS / Vite / Web Components / Web Audio API | Voice chat interface, profile picker, avatar rendering |
-| **Design System** | LoLA Brand Guide v1 (Exo 2 + Space Mono + Noto Sans JP, dark-only) | Indigo/rose/sky color palette on #0a0a1a — see `docs/LOLA_BRAND_GUIDE_v1.md` |
+| **Design System** | LoLA Brand Guide v1 (Exo 2 + Space Mono + Noto Sans JP, dark default + light mode) | Indigo/rose/sky palette on #0a0a1a, CSS component patterns (`.slide-panel`, `.icon-btn`), i18n (8 langs) — see `docs/LOLA_BRAND_GUIDE_v1.md` |
 | **Avatar** | Pre-rendered FLUX expressions (8 per profile) | Expression carousel with keyword-based detection from output transcription |
 | **Avatar Generation** | FLUX Schnell Free (anchors) + FLUX Kontext Pro (expressions) via Together AI | `scripts/generate-expressions.js` — automated pipeline for character-consistent expression images |
 | **Audio Visualization** | AnalyserNode (Web Audio API) | Guitar-string waveform visualizer — shows activity even when session is muted |

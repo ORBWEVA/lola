@@ -42,8 +42,10 @@ class AppRoot extends HTMLElement {
     connectedCallback() {
         this.innerHTML = '';
 
-        // LoLA is dark-only — ensure no light-mode class persists
-        document.body.classList.remove('light-mode');
+        // Restore saved theme preference
+        const savedTheme = localStorage.getItem('lola_theme');
+        if (savedTheme === 'light') document.body.classList.add('light-mode');
+        else document.body.classList.remove('light-mode');
 
         // Persistent Header
         const header = document.createElement('header');
@@ -178,6 +180,7 @@ class AppRoot extends HTMLElement {
                 break;
             case 'lola':
                 currentView = document.createElement('view-lola');
+                currentView.skipSplash = true;
                 if (this.state.avatarConfig) currentView.avatarConfig = this.state.avatarConfig;
                 break;
             case 'creator':

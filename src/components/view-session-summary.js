@@ -1,7 +1,7 @@
 /**
  * Session Summary — post-session screen with stats and feedback.
- * Replaces the Immergo-era view-summary.js for LoLA coaching sessions.
  */
+import { t } from '../lib/i18n.js'
 
 class ViewSessionSummary extends HTMLElement {
   constructor() {
@@ -212,31 +212,31 @@ class ViewSessionSummary extends HTMLElement {
           <div class="summary-stats">
             <div class="summary-stat">
               <div class="summary-stat-value">${minutes}:${String(seconds).padStart(2, '0')}</div>
-              <div class="summary-stat-label">Duration</div>
+              <div class="summary-stat-label">${t('duration')}</div>
             </div>
             <div class="summary-stat">
               <div class="summary-stat-value">${messageCount}</div>
-              <div class="summary-stat-label">Messages</div>
+              <div class="summary-stat-label">${t('messages')}</div>
             </div>
             <div class="summary-stat">
               <div class="summary-stat-value">${d.frustrationCount || 0}</div>
-              <div class="summary-stat-label">Assists</div>
+              <div class="summary-stat-label">${t('assists')}</div>
             </div>
           </div>
 
           <div class="feedback-section" id="feedback-section">
-            <p class="feedback-prompt">How was your session?</p>
+            <p class="feedback-prompt">${t('howWasSession')}</p>
             <div class="feedback-options" id="feedback-options">
-              <button class="feedback-btn" data-rating="1">Not great</button>
-              <button class="feedback-btn" data-rating="3">Okay</button>
-              <button class="feedback-btn" data-rating="5">Loved it</button>
+              <button class="feedback-btn" data-rating="1">${t('notGreat')}</button>
+              <button class="feedback-btn" data-rating="3">${t('okay')}</button>
+              <button class="feedback-btn" data-rating="5">${t('lovedIt')}</button>
             </div>
             <div id="feedback-extra" style="display:none; width:100%; display:flex; flex-direction:column; gap:10px;"></div>
           </div>
 
           <div class="summary-nav">
-            <button class="nav-btn nav-primary" id="nav-again">Talk Again</button>
-            <button class="nav-btn nav-secondary" id="nav-home">Back to Home</button>
+            <button class="nav-btn nav-primary" id="nav-again">${t('talkAgain')}</button>
+            <button class="nav-btn nav-secondary" id="nav-home">${t('backToHome')}</button>
           </div>
         </div>
       </div>
@@ -258,8 +258,8 @@ class ViewSessionSummary extends HTMLElement {
         if (!this._feedbackSent) {
           extraEl.style.display = 'flex'
           extraEl.innerHTML = `
-            <textarea class="feedback-textarea" id="feedback-text" rows="3" placeholder="Any other feedback? (optional)"></textarea>
-            <button class="feedback-submit" id="feedback-submit">Submit</button>
+            <textarea class="feedback-textarea" id="feedback-text" rows="3" placeholder="${t('tellUsMore')}"></textarea>
+            <button class="feedback-submit" id="feedback-submit">${t('sendFeedback')}</button>
           `
           this.querySelector('#feedback-submit').addEventListener('click', () => this._submitFeedback())
         }
@@ -305,7 +305,7 @@ class ViewSessionSummary extends HTMLElement {
     this._feedbackSent = true
     const section = this.querySelector('#feedback-section')
     if (section) {
-      section.innerHTML = '<p class="feedback-thanks">Thanks for your feedback!</p>'
+      section.innerHTML = `<p class="feedback-thanks">${t('thanks')}</p>`
     }
   }
 }
