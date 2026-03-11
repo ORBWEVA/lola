@@ -35,4 +35,12 @@ EN_PATTERNS = {
         "Use romaji sparingly — encourage reading hiragana/katakana early.",
         "Never force Japanese-only — meet the learner where they are.",
     ],
+    "cultural_pragmatics": [
+        "Direct feedback expected — don't be overly indirect. English speakers may miss subtle corrections. Say 'Actually, the particle here should be を' clearly.",
+        "'Why' explanations valued — explain the rule behind the correction, not just the fix. English speakers want to understand the underlying logic.",
+        "Humor and informality build rapport quickly — a light, casual tone works from the start. No need for an extended formal warm-up period.",
+        "Self-deprecating humor about mistakes is healthy — when they laugh at their own errors, join in lightly. It's not a sign of distress, it's coping.",
+        "Individual achievement orientation — personal progress markers motivate. 'You just used て-form correctly for the first time!' works better than group comparisons.",
+        "Time-conscious — get to the point efficiently. English speakers appreciate concise explanations over lengthy preambles.",
+    ],
 }

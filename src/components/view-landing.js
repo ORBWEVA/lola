@@ -588,9 +588,7 @@ class ViewLanding extends HTMLElement {
 
         <div class="landing-cta">
           <p class="landing-cta-tagline">${t('tagline')}</p>
-          <button class="landing-cta-btn" id="cta-start">${t('startCoaching')}</button>
-          <button class="landing-cta-secondary" id="cta-demo">${t('seeAdapts')}</button>
-          <button class="landing-cta-secondary" id="cta-creator">${t('createAvatar')}</button>
+          <button class="landing-cta-btn" id="cta-demo">${t('seeAdapts')}</button>
         </div>
 
         <div class="landing-menu-backdrop" id="landing-menu-backdrop"></div>
@@ -619,10 +617,10 @@ class ViewLanding extends HTMLElement {
             </div>
           </div>
           <nav class="landing-menu-nav">
-            <button class="landing-menu-link" data-nav="landing">${t('home')}</button>
-            <button class="landing-menu-link" data-nav="demo">${t('demo')}</button>
-            <button class="landing-menu-link" data-nav="creator">${t('create')}</button>
-            <button class="landing-menu-link" data-nav="lola">${t('start')}</button>
+            <button class="landing-menu-link" data-nav="lola">${t('startCoaching')}</button>
+            <button class="landing-menu-link" data-nav="profiles">${t('demoProfiles')}</button>
+            <button class="landing-menu-link" data-nav="split">${t('splitScreen')}</button>
+            <button class="landing-menu-link" data-nav="creator">${t('createAvatar')}</button>
           </nav>
         </div>
       </div>
@@ -776,14 +774,6 @@ class ViewLanding extends HTMLElement {
       iconOn.style.display = this._video.muted ? 'none' : ''
     })
 
-    this.querySelector('#cta-start').addEventListener('click', () => {
-      this._cleanup()
-      this.dispatchEvent(new CustomEvent('navigate', {
-        bubbles: true,
-        detail: { view: 'lola' }
-      }))
-    })
-
     this.querySelector('#cta-demo').addEventListener('click', () => {
       this._cleanup()
       this.dispatchEvent(new CustomEvent('navigate', {
@@ -813,13 +803,6 @@ class ViewLanding extends HTMLElement {
       })
     })
 
-    this.querySelector('#cta-creator').addEventListener('click', () => {
-      this._cleanup()
-      this.dispatchEvent(new CustomEvent('navigate', {
-        bubbles: true,
-        detail: { view: 'creator' }
-      }))
-    })
   }
 
   _cleanup() {

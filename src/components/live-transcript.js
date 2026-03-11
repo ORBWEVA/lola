@@ -152,9 +152,12 @@ class LiveTranscript extends HTMLElement {
 
         .bubble.user {
           align-self: flex-end;
-          color: var(--lola-sky, #4cc9f0);
+          color: var(--lola-text-muted, #6a6a80);
           text-align: right;
-          font-weight: 500;
+          font-weight: 400;
+          font-size: 0.85rem;
+          font-style: italic;
+          opacity: 0.5;
         }
 
         .bubble.temp {

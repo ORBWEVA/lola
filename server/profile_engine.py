@@ -76,3 +76,13 @@ PROFILE_D = {
     "pacing": "action",
     "instruction_depth": "flow_first",
 }
+
+# Korean speaker learning English
+PROFILE_E = {
+    "l1": "ko",
+    "error_response": "emotional_safety",
+    "learning_preference": "social_contextual",
+    "motivation_driver": "emotion",
+    "pacing": "action",
+    "instruction_depth": "bridge_building",
+}

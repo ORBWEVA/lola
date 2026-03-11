@@ -411,8 +411,9 @@ class ViewLola extends HTMLElement {
 
   connectedCallback() {
     this._initDevice();
-    // Skip old splash when navigating from the new landing page
-    if (this.skipSplash) {
+    if (this.showDemoProfiles) {
+      this.showProfilePicker();
+    } else if (this.skipSplash) {
       this.showL1Selection();
     } else {
       this.showLanding();
@@ -1093,7 +1094,7 @@ class ViewLola extends HTMLElement {
     `;
 
     this.querySelector("#back-btn").addEventListener("click", () =>
-      this.showLanding()
+      this.dispatchEvent(new CustomEvent('navigate', { bubbles: true, detail: { view: 'landing' } }))
     );
 
     try {
@@ -1116,18 +1117,11 @@ class ViewLola extends HTMLElement {
       { key: "profile_b", ...data.profile_b, color: "#ff4d6d" },
       { key: "profile_c", ...data.profile_c, color: "#4cc9f0" },
       { key: "profile_d", ...data.profile_d, color: "#06d6a0" },
+      ...(data.profile_e ? [{ key: "profile_e", ...data.profile_e, color: "#f4a261" }] : []),
     ];
 
     profiles.forEach((p) => {
-      const l1 =
-        p.profile?.l1 === "en"
-          ? "English"
-          : p.profile?.l1 === "ko"
-            ? "Korean"
-            : "Japanese";
-      const target = p.profile?.l1 === "en" ? "Japanese" : "English";
       const card = document.createElement("button");
-      const imgKey = p.key.replace("_", "-");
       card.style.cssText = `
         background: var(--color-surface); border: 2px solid ${p.color}33;
         border-radius: var(--radius-lg); padding: 24px 28px; cursor: pointer;
@@ -1136,13 +1130,16 @@ class ViewLola extends HTMLElement {
       `;
       card.innerHTML = `
         <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
-          <img src="/avatars/${imgKey}/smiling.png" alt="${p.label}"
+          <img src="${p.avatar || ''}" alt="${p.label}"
             style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: center 20%; border: 2px solid ${p.color}44; flex-shrink: 0;"
             onerror="this.style.display='none'">
-          <div style="font-size: 0.7rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em;">${p.label}</div>
+          <div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: var(--lola-text, #f0f0f8);">${p.label}</div>
+            <div style="font-size: 0.65rem; font-weight: 800; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.1em;">${p.subtitle || ''}</div>
+          </div>
         </div>
         <div style="font-size: 0.85rem; color: var(--color-text-sub); line-height: 1.4;">${p.description}</div>
-        <div style="margin-top: 10px; font-size: 0.75rem; color: var(--color-text-sub); opacity: 0.7;">${l1} \u2192 ${target}</div>
+        <div style="margin-top: 10px; font-size: 0.75rem; color: var(--color-text-sub); opacity: 0.7;">${p.direction || ''}</div>
       `;
       card.addEventListener("mouseenter", () => {
         card.style.borderColor = p.color;
@@ -1890,7 +1887,7 @@ class ViewLola extends HTMLElement {
         this.client.setVoice(ac.voice || "Kore");
       } else {
         this.client.setSystemInstructions(this._systemInstruction);
-        const voice = this._l1 === "en" ? "Puck" : "Kore";
+        const voice = this._l1 === "en" ? "Puck" : "Aoede";
         this.client.setVoice(voice);
       }
       this.client.setInputAudioTranscription(true);
@@ -1982,7 +1979,7 @@ class ViewLola extends HTMLElement {
       try {
         const deviceId = localStorage.getItem("lola_device_id");
         if (deviceId) {
-          const voice = this._l1 === "en" ? "Puck" : "Kore";
+          const voice = this._l1 === "en" ? "Puck" : "Aoede";
           const startRes = await fetch("/api/sessions/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

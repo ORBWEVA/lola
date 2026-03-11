@@ -33,8 +33,8 @@ from server.gemini_live import GeminiLive
 from server.fingerprint import generate_fingerprint
 from server.simple_tracker import simpletrack
 from server.config_utils import get_project_id, get_genai_client, get_model_name
-from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D
-from server.instruction_engine import generate_system_instruction, generate_multilingual_instruction, generate_context_update
+from server.profile_engine import generate_profile, PROFILE_A, PROFILE_B, PROFILE_C, PROFILE_D, PROFILE_E
+from server.instruction_engine import generate_multilingual_instruction, generate_context_update
 from server.report_engine import generate_report
 from server.db import get_db
 
@@ -160,7 +160,7 @@ async def create_profile(request: Request):
     l1 = data.get("l1", "ja")
     answers = data.get("answers", {})
     profile = generate_profile(l1, answers)
-    instruction = generate_system_instruction(profile)
+    instruction = generate_multilingual_instruction(profile)
     return {"profile": profile, "system_instruction": instruction}
 
 
@@ -171,26 +171,47 @@ async def get_demo_profiles():
         "profile_a": {
             "profile": PROFILE_A,
             "system_instruction": generate_multilingual_instruction(PROFILE_A),
-            "label": "The Analyst",
-            "description": "Multilingual coach — analytical, structure-first",
+            "label": "Sakura",
+            "subtitle": "Japanese & Korean Language Coach",
+            "description": "Analytical, structure-first — meets you where you are",
+            "avatar": "/assets/sakura.png",
+            "direction": "Multilingual",
         },
         "profile_b": {
             "profile": PROFILE_B,
-            "system_instruction": generate_multilingual_instruction(PROFILE_B),
-            "label": "The Explorer",
-            "description": "Multilingual coach — social, action-oriented",
+            "system_instruction": generate_multilingual_instruction(PROFILE_B, domain="fitness"),
+            "label": "Marcus",
+            "subtitle": "Fitness & Wellness Coach",
+            "description": "Your goals, your pace — keeps you motivated and moving",
+            "avatar": "/assets/marcus.png",
+            "direction": "Multilingual",
         },
         "profile_c": {
             "profile": PROFILE_C,
-            "system_instruction": generate_system_instruction(PROFILE_C),
-            "label": "JP Beginner (Analyst)",
-            "description": "English speaker learning Japanese — analytical, structured",
+            "system_instruction": generate_multilingual_instruction(PROFILE_C, domain="business_strategy"),
+            "label": "Emma",
+            "subtitle": "Business Strategy Coach",
+            "description": "Straight talk, structured thinking — growth-focused",
+            "avatar": "/assets/emma.png",
+            "direction": "Multilingual",
         },
         "profile_d": {
             "profile": PROFILE_D,
-            "system_instruction": generate_system_instruction(PROFILE_D),
-            "label": "JP Beginner (Explorer)",
-            "description": "English speaker learning Japanese — immersive, action-paced",
+            "system_instruction": generate_multilingual_instruction(PROFILE_D),
+            "label": "Sara",
+            "subtitle": "Immersive Language Coach",
+            "description": "Pick a language, any language — immersive, action-paced",
+            "avatar": "/assets/sara.png",
+            "direction": "Multilingual",
+        },
+        "profile_e": {
+            "profile": PROFILE_E,
+            "system_instruction": generate_multilingual_instruction(PROFILE_E, domain="business_english"),
+            "label": "Alex",
+            "subtitle": "Business English Coach",
+            "description": "Presentations, negotiations, emails — professional English that lands",
+            "avatar": "/assets/alex.png",
+            "direction": "Multilingual",
         },
     }
 

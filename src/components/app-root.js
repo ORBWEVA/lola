@@ -183,6 +183,11 @@ class AppRoot extends HTMLElement {
                 currentView.skipSplash = true;
                 if (this.state.avatarConfig) currentView.avatarConfig = this.state.avatarConfig;
                 break;
+            case 'profiles':
+                currentView = document.createElement('view-lola');
+                currentView.skipSplash = true;
+                currentView.showDemoProfiles = true;
+                break;
             case 'creator':
                 currentView = document.createElement('view-creator');
                 break;

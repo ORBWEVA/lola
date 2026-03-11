@@ -7,7 +7,41 @@ import { t } from '../lib/i18n.js'
 
 const DEMO_SCENARIOS = [
   {
+    title: 'Pronunciation Coaching',
+    insightTitle: null,
+    insightText: null,
+    learnerSays: '先生、"right" と "light" は同じですか？ (Sensei, "right" to "light" wa onaji desu ka?)',
+    profiles: [
+      {
+        label: 'Analytical Learner',
+        sublabel: 'Wants rules & patterns',
+        badge: 'Profile A',
+        color: '#4361ee',
+        responses: [
+          { type: 'coach', text: 'いい質問ですね！(Great question!) R and L are distinct phonemes in English.' },
+          { type: 'rule', text: '"R" の発音: tongue curls back, doesn\'t touch the roof. Air flows around it.' },
+          { type: 'rule', text: '"L" の発音: tongue tip touches the ridge behind your top teeth.' },
+          { type: 'coach', text: '日本語の「ら・り・る・れ・ろ」(ra-ri-ru-re-ro) sits between English R and L — that\'s a native-language interference pattern. Let\'s drill minimal pairs.' },
+        ],
+      },
+      {
+        label: 'Explorer Learner',
+        sublabel: 'Learns by doing',
+        badge: 'Profile B',
+        color: '#4cc9f0',
+        responses: [
+          { type: 'coach', text: '似てるけど全然違う意味になるよ！(They sound similar but mean totally different things!) Let\'s play a game.' },
+          { type: 'coach', text: 'R か L か当ててみて: "rice"... "lice"... "right"... "light"... (Tell me — R or L?)' },
+          { type: 'coach', text: '完璧じゃなくて大丈夫 (Don\'t worry about being perfect) — the more you hear them, the more your ear will catch the difference.' },
+          { type: 'coach', text: '"really long road" をゆっくり言ってみて。舌の動きの違い、感じる？(Say it slowly. Feel the difference?)' },
+        ],
+      },
+    ],
+  },
+  {
     title: 'Grammar Correction',
+    insightTitle: null,
+    insightText: null,
     learnerSays: 'I went to store yesterday and buyed many thing.',
     profiles: [
       {
@@ -38,31 +72,33 @@ const DEMO_SCENARIOS = [
     ],
   },
   {
-    title: 'Pronunciation Coaching',
-    learnerSays: 'Sensei, "right" to "light" wa onaji desu ka?',
+    title: 'Cultural Adaptation',
+    insightTitle: 'Same learner. Different culture. Different coaching.',
+    insightText: 'Existing tools like Hofstede\'s Culture Compass and Erin Meyer\'s Culture Map tell you about cultural differences. LoLA adapts to them in real time — adjusting feedback directness, praise style, and emotional scaffolding based on 36 cultural norms across 6 languages, informed by research in cross-cultural communication (Hofstede, Trompenaars, Meyer).',
+    learnerSays: '"I am very sorry... I don\'t speak English good. Please excuse my bad English."',
     profiles: [
       {
-        label: 'Analytical Learner',
-        sublabel: 'Wants rules & patterns',
-        badge: 'Profile A',
-        color: '#4361ee',
+        label: 'Japanese Learner',
+        sublabel: 'Face-saving, indirect feedback',
+        badge: 'Cultural',
+        color: '#e879a0',
         responses: [
-          { type: 'coach', text: 'Great question! R and L are distinct phonemes in English.' },
-          { type: 'rule', text: 'For "R": tongue curls back, doesn\'t touch the roof. Air flows around it.' },
-          { type: 'rule', text: 'For "L": tongue tip touches the ridge behind your top teeth.' },
-          { type: 'coach', text: 'This maps to the L1 interference pattern — Japanese ら行 sits between English R and L. Let\'s drill minimal pairs.' },
+          { type: 'coach', text: 'Your English is coming along really well — you expressed that perfectly clearly.' },
+          { type: 'coach', text: 'A small refinement: "well" instead of "good" here — "I don\'t speak English well." You were very close.' },
+          { type: 'rule', text: 'Hofstede: High power distance + collectivism. Meyer: Indirect negative feedback. LoLA responds with gentle, indirect correction and group normalization. Praise targets effort, not the person (謙遜 kenson — modesty norm).' },
+          { type: 'coach', text: 'Many learners at your stage make this same adjustment. It\'s a sign you\'re progressing.' },
         ],
       },
       {
-        label: 'Explorer Learner',
-        sublabel: 'Learns by doing',
-        badge: 'Profile B',
-        color: '#4cc9f0',
+        label: 'Spanish Learner',
+        sublabel: 'Warm, direct encouragement',
+        badge: 'Cultural',
+        color: '#f4a261',
         responses: [
-          { type: 'coach', text: "They sound similar but mean completely different things! Let's play a game." },
-          { type: 'coach', text: 'I\'ll say a word, you tell me if it\'s R or L: "rice"... "lice"... "right"... "light"...' },
-          { type: 'coach', text: "Don't worry about getting it perfect — the more you hear them, the more your ear will catch the difference." },
-          { type: 'coach', text: 'Try saying "really long road" slowly. Feel how your tongue moves differently for each one?' },
+          { type: 'coach', text: 'Hey, no need to apologize! You\'re communicating, and that\'s what matters.' },
+          { type: 'coach', text: 'Quick fix though: "I don\'t speak English WELL" — "good" is for things, "well" is for actions. Easy swap!' },
+          { type: 'coach', text: 'Think of it this way: "good food" but "speak well." Same idea as bueno vs. bien!' },
+          { type: 'rule', text: 'Hofstede: Low uncertainty avoidance + high indulgence. Meyer: Direct negative feedback. LoLA responds with energy, humor, and a native-language bridge (bueno/bien) that builds confidence through familiarity.' },
         ],
       },
     ],
@@ -261,25 +297,43 @@ class ViewDemo extends HTMLElement {
         }
         .demo-btn-secondary:hover { background: rgba(255,255,255,0.08); }
 
-        .demo-dots {
+        .demo-nav-pills {
           display: flex;
-          gap: 8px;
+          justify-content: center;
+          margin-bottom: 24px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 999px;
+          padding: 3px;
+          display: inline-flex;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .demo-nav-pills-wrap {
+          display: flex;
           justify-content: center;
           margin-bottom: 24px;
         }
-        .demo-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.2);
+        .demo-pill {
+          padding: 6px 16px;
+          border-radius: 999px;
           border: none;
-          padding: 0;
+          background: transparent;
+          color: var(--lola-text-muted, #555575);
+          font-family: var(--font-mono, 'Space Mono', monospace);
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
           cursor: pointer;
-          transition: all 0.3s;
+          transition: all 0.25s ease-out;
+          white-space: nowrap;
         }
-        .demo-dot.active {
+        .demo-pill:hover {
+          color: var(--lola-text-secondary, #9595b0);
+        }
+        .demo-pill.active {
           background: var(--lola-indigo, #4361ee);
-          transform: scale(1.3);
+          color: white;
         }
       </style>
 
@@ -291,8 +345,10 @@ class ViewDemo extends HTMLElement {
           <span class="demo-title">${t('sameErrorTitle')}</span>
         </div>
 
-        <div class="demo-dots" id="demo-dots">
-          ${DEMO_SCENARIOS.map((_, i) => `<button class="demo-dot${i === this._scenarioIndex ? ' active' : ''}" data-i="${i}"></button>`).join('')}
+        <div class="demo-nav-pills-wrap">
+          <div class="demo-nav-pills" id="demo-pills">
+            ${DEMO_SCENARIOS.map((s, i) => `<button class="demo-pill${i === this._scenarioIndex ? ' active' : ''}" data-i="${i}">${s.title}</button>`).join('')}
+          </div>
         </div>
 
         <div class="demo-scenario-label">${scenario.title}</div>
@@ -322,8 +378,8 @@ class ViewDemo extends HTMLElement {
         </div>
 
         <div class="demo-insight">
-          <div class="demo-insight-title">${t('sameError')}</div>
-          <div class="demo-insight-text">${t('demoInsight')}</div>
+          <div class="demo-insight-title">${scenario.insightTitle || t('sameError')}</div>
+          <div class="demo-insight-text">${scenario.insightText || t('demoInsight')}</div>
         </div>
 
         <div class="demo-nav">
@@ -355,9 +411,9 @@ class ViewDemo extends HTMLElement {
       this._animateResponses();
     });
 
-    this.querySelectorAll('.demo-dot').forEach(dot => {
-      dot.addEventListener('click', () => {
-        this._scenarioIndex = parseInt(dot.dataset.i);
+    this.querySelectorAll('.demo-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        this._scenarioIndex = parseInt(pill.dataset.i);
         this.render();
       });
     });
