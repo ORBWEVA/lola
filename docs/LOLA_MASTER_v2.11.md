@@ -1,4 +1,4 @@
-# LoLA — Loka Learning Avatar Master Reference (v2.10 — 2026-03-10)
+# LoLA — Loka Learning Avatar Master Reference (v2.11 — 2026-03-11)
 
 **Status:** CANONICAL — supersedes LOLA_PRD_v1.md and LOLA_PRD_v2.md  
 **Scope:** LoLA (Loka Learning Avatar) — the AI coaching layer of the Loka platform  
@@ -12,6 +12,7 @@
 
 | Version | Timestamp (UTC) | Updated By | Summary of Changes |
 |---------|-----------------|------------|-------------------|
+| 2.11 | 2026-03-11T09:00:00Z | Claude Code (Opus 4.6) | Cultural intelligence layer: 36 cultural pragmatics norms across 6 languages (JA, KO, EN, ES, ZH, PT) informed by Hofstede, Trompenaars, and Erin Meyer frameworks. 3 new L1 pattern files (Spanish 9 patterns, Chinese 9, Portuguese 9). Dynamic multilingual coaching — all system instructions now detect learner's spoken language instead of hardcoding L1. Domain-specific coaching added (fitness, business strategy, business English). 5 named personas (Sakura, Marcus, Emma, Sara, Alex) with consistent avatars across profile cards and session screens. Demo page: third scenario (Cultural Adaptation) with framework references, segmented pill nav, judge-friendly language (no jargon). Voice updated to Aoede (female). Profile E added (Alex, Business English). |
 | 2.10 | 2026-03-10T04:00:00Z | Claude Code (Opus 4.6) | Brand guide alignment pass: slide-out menu redesigned to match LOLA_BRAND_GUIDE_v1 (right-anchored panel with solid `--lola-surface` background, Exo 2 weight 300 left-aligned nav links, top bar with sun/moon theme icon + flag/chevron language dropdown + X close, brand-correct shadows and borders). CSS updated with reusable `.slide-panel`, `.slide-panel-link`, `.icon-btn` component patterns from brand guide. i18n language switcher moved from landing page to menu panel. Dark/light mode toggle converted from text buttons to icon toggle. Instruction engine updated with explicit L1 language hint for Gemini input transcription accuracy. |
 | 2.9 | 2026-03-09T12:00:00Z | Claude Code (Opus 4.6) | Gemini Live Agent Challenge UX rebuild (Steps 1-7): Landing page with video hero, word-by-word subtitle sync, canvas waveform, browser language detection (8 langs). Session UI polish: hint overlay, live dot, mic mute, camera toggle with vision context, branded error screens, session-summary navigation. Post-session feedback endpoint. "Same Error, Different Coaching" demo (2 scenarios, A/B comparison). Creator wizard (5 steps: name+domain, personality, appearance, voice, review+launch) with backend avatar endpoints. README updated with features list, new project structure. Cloud Run deploy with MIN_INSTANCES=1. |
 | 2.8 | 2026-03-05T19:00:00Z | Claude Code (Opus 4.6) | Added "Fork Origin — Immergo" section documenting what the Immergo base provided vs. what LoLA built from scratch, why the fork was chosen, and attribution (Zack Akil, Apache 2.0, official hackathon resource). |
@@ -447,26 +448,34 @@ Q5: I learn best when the teacher:
 
 These five answers generate a **Learner Coaching Profile** that maps to relevant dimensions across personality frameworks without requiring learners to know or care about any of them.
 
-### Four Demo Profiles (BUILT)
+### Five Demo Personas (BUILT)
 
-The current build uses 4 pre-built demo profiles instead of the full onboarding flow. Profiles are selectable from a card picker in the UI:
+The current build uses 5 named personas with pre-built coaching profiles, spanning multiple coaching domains. All coaches are multilingual — the system instruction dynamically detects the learner's spoken language instead of hardcoding an L1. Personas are selectable from a card picker in the UI:
 
-| Profile | L1 | Direction | Style | Label |
-|---------|-----|-----------|-------|-------|
-| **A** | Japanese | JA→EN | Analytical, structure-first, reflective | "The Analyst" |
-| **B** | Japanese | JA→EN | Social, action-paced, challenge-forward | "The Explorer" |
-| **C** | English | EN→JA | Analytical, structure-first, reflective | "JP Beginner (Analyst)" |
-| **D** | English | EN→JA | Social, experience-first, challenge-forward | "JP Beginner (Explorer)" |
+| Profile | Persona | Domain | Style | Subtitle |
+|---------|---------|--------|-------|----------|
+| **A** | Sakura | Language (JA/KO) | Analytical, structure-first, reflective | Japanese & Korean Language Coach |
+| **B** | Marcus | Fitness & Wellness | Social, action-paced, challenge-forward | Fitness & Wellness Coach |
+| **C** | Emma | Business Strategy | Analytical, structure-first, reflective | Business Strategy Coach |
+| **D** | Sara | Immersive Language | Social, experience-first, challenge-forward | Immersive Language Coach |
+| **E** | Alex | Business English | Social, emotional-safety, bridge-building | Business English Coach |
 
-**Both-direction support:** The instruction engine dynamically generates "You are LoLA, a warm and adaptive {target_lang} language coach for {l1_name} speakers" based on the `target_language` field in each L1 pattern file. Adding new L1→target combinations is a config change (new pattern file + profile).
+**Dynamic language detection:** The instruction engine generates language-agnostic system instructions. The coach detects whatever language the learner speaks and responds accordingly — no L1 preselection required. Domain-specific coaching rules (fitness form cues, business frameworks, professional English register) are injected based on the `domain` parameter.
+
+**Cultural intelligence:** Each system instruction includes 36 cultural pragmatics norms across 6 languages, informed by established frameworks (Hofstede dimensions, Trompenaars dilemmas, Erin Meyer's Culture Map). The coach adjusts feedback directness, praise style, silence tolerance, and emotional scaffolding based on the learner's detected culture.
 
 ### L1 Pattern Files (BUILT)
 
-| File | L1 | Target | Key Patterns |
-|------|-----|--------|-------------|
-| `server/l1_patterns/japanese.py` | Japanese | English | Articles, tense, pro-drop, plurals, agreement, SOV, L/R |
-| `server/l1_patterns/korean.py` | Korean | English | Articles, tense, pro-drop, plurals, agreement, SOV, honorific transfer |
-| `server/l1_patterns/english.py` | English | Japanese | Pronoun overuse, SVO→SOV, particles, politeness mixing, counters, te-form |
+Each pattern file includes linguistic interference patterns, L1 bridges, coaching examples, bilingual rules, and cultural pragmatics (6 norms per language).
+
+| File | L1 | Target | Interference Patterns | Cultural Norms |
+|------|-----|--------|----------------------|----------------|
+| `japanese.py` | Japanese | English | Articles, tense, pro-drop, plurals, agreement, SOV, L/R (7) | Face-saving, productive silence, modesty norm, formality gradient, group harmony, apology normalization (6) |
+| `korean.py` | Korean | English | Articles, tense, pro-drop, plurals, agreement, SOV, honorific transfer, relative clauses (8) | Teacher authority, indirect feedback, nunchi, effort validation, group normalization, warm tone (6) |
+| `english.py` | English | Japanese | Pronoun overuse, SVO→SOV, particles, politeness mixing, counters, te-form (7) | Direct feedback, "why" explanations, humor/informality, self-deprecation healthy, individual achievement, time-efficiency (6) |
+| `spanish.py` | Spanish | English | False cognates, subject overuse, adjective placement, double negatives, ser/estar, prepositions, present-for-future, missing auxiliary, B/V merger (9) | Warmth-first rapport, direct-but-warm corrections, humor as tool, energetic coaching, social/family motivation, communication over perfection (6) |
+| `chinese.py` | Chinese | English | No verb conjugation, missing articles, topic-comment, missing plurals, tense by context, preposition confusion, th sounds, final consonant deletion, countable/uncountable (9) | Face-saving, teacher authority, rote-to-communicative bridge, modesty handling, exam-oriented progress, silence patience (6) |
+| `portuguese.py` | Portuguese | English | False cognates, pro-drop, adjective placement, preposition transfer, double negatives, present continuous overuse, H dropping, th sounds, gender transfer (9) | Warmth/jeitinho, quick informality, storytelling, social motivation, error resilience, expressiveness as strength (6) |
 
 ### Academic Foundations — Source Reference
 
@@ -624,13 +633,15 @@ Migrations:
 |------|--------|-------|
 | Fork Immergo, get running locally | DONE | Forked, adapted to API key mode |
 | Gemini Live API with native audio | DONE | `gemini-2.5-flash-native-audio-preview-12-2025` via `google-genai` SDK |
-| Profile generation logic (answers → coaching dimensions) | DONE | `server/profile_engine.py` — 4 demo profiles + dynamic generator |
-| Dynamic system prompt (12 principles + profile injection) | DONE | `server/instruction_engine.py` — weighted principles, L1 patterns, both-direction |
-| L1 interference patterns (JA, KO, EN) | DONE | 3 pattern files in `server/l1_patterns/` |
+| Profile generation logic (answers → coaching dimensions) | DONE | `server/profile_engine.py` — 5 named personas (A-E) + dynamic generator |
+| Dynamic system prompt (12 principles + profile injection) | DONE | `server/instruction_engine.py` — weighted principles, L1 patterns, cultural pragmatics, domain-specific coaching |
+| L1 interference patterns (JA, KO, EN, ES, ZH, PT) | DONE | 6 pattern files in `server/l1_patterns/`, 49 interference patterns + 36 cultural norms |
+| Cultural intelligence layer | DONE | 36 cultural pragmatics norms (Hofstede/Trompenaars/Meyer) injected into all system instructions |
+| Domain-specific coaching (fitness, business, business English) | DONE | `generate_multilingual_instruction(profile, domain=...)` in instruction engine |
 | Voice chat session via Gemini Live | DONE | WebSocket proxy, PCM streaming, barge-in works |
 | 3D avatar with TalkingHead | DONE | Ready Player Me avatar, idle animations, gestures |
 | Avatar lip sync (AnalyserNode) | DONE | Real-time volume → viseme blend shapes. Mouth moves but sync quality needs polish. |
-| Demo profile picker (4 cards) | DONE | Card-based UI with language direction labels |
+| Demo profile picker (5 personas) | DONE | Card-based UI with avatar thumbnails, subtitles, domain labels |
 | Camera/vision input to Gemini | DONE | VideoStreamer sends JPEG frames at 1fps via WebSocket; PiP camera preview in session view |
 | Expression carousel + waveform visualizer | DONE | Replaced TalkingHead 3D avatar. 8 expressions per profile, keyword detection from transcription. |
 | Avatar image generation pipeline | DONE | `scripts/generate-expressions.js` — FLUX Schnell anchors + Kontext Pro expressions via Together AI |
@@ -965,10 +976,11 @@ lola/
 
 | Voice | Gender | Used For | Notes |
 |-------|--------|----------|-------|
-| Kore | Female | All profiles (current) | Warm, clear. Set in `view-lola.js` |
-| Puck | Male | Not used (was default) | Changed to Kore for better coaching persona |
+| Aoede | Female | Non-English L1 sessions | Warm, clear. Set in `view-lola.js` |
+| Kore | Male | English L1 sessions | Was default, reassigned after voice/avatar gender mismatch fix |
+| Puck | Male | Not used | Original Immergo default |
 
-Spec calls for distinct voices per coach avatar (Profile A calm/measured, Profile B warm/energetic). Not yet implemented — currently all profiles use Kore.
+Spec calls for distinct voices per coach avatar. Not yet fully implemented — currently using Aoede for most profiles. Per-persona voice assignment is a future enhancement.
 
 ---
 
