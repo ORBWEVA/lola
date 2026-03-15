@@ -36,39 +36,28 @@ export const VIDEO = {
   FPS: 30,
 } as const;
 
-// Segment durations in seconds — total 3:30 = 210s
+// Segment durations — total ~3:30
 export const SEGMENTS = {
-  INTRO: 6,
-  PROBLEM: 14,
-  DEMO_LANDING: 6,
-  DEMO_PRONUNCIATION: 12,
-  DEMO_GRAMMAR: 12,
-  DEMO_CULTURAL: 12,
-  ARCHITECTURE: 10,
-  MULTI_DOMAIN: 12,
-  CLOSE: 10,
+  INTRO: 6,           // LoLA logo + glow
+  VEO_HOOK: 8,        // 1A classroom + 1B frustrated learner
+  VEO_SAME: 6,        // 1C same tutors
+  PROBLEM: 12,        // Text: problem statement
+  VEO_INSIGHT: 8,     // 2A two learners + 2B brand reveal
+  DEMO_LANDING: 5,    // Landing screenshot
+  DEMO_PRONUNCIATION: 10, // Demo page screenshot
+  DEMO_GRAMMAR: 10,   // Demo page screenshot
+  DEMO_CULTURAL: 10,  // Demo page screenshot
+  VEO_RESEARCH: 4,    // 7T research books transition
+  ARCHITECTURE: 10,   // Architecture diagram
+  VEO_DOMAINS: 8,     // 8A domain expansion
+  VEO_CREATOR: 8,     // 8B creator platform
+  MULTI_DOMAIN: 10,   // Text slides
+  VEO_CLOSE: 8,       // 9A Adelaide dawn
+  CLOSE: 8,           // Logo + tagline
 } as const;
 
-// Frame counts (seconds * FPS)
-export const FRAMES = {
-  INTRO: SEGMENTS.INTRO * VIDEO.FPS,
-  PROBLEM: SEGMENTS.PROBLEM * VIDEO.FPS,
-  DEMO_LANDING: SEGMENTS.DEMO_LANDING * VIDEO.FPS,
-  DEMO_PRONUNCIATION: SEGMENTS.DEMO_PRONUNCIATION * VIDEO.FPS,
-  DEMO_GRAMMAR: SEGMENTS.DEMO_GRAMMAR * VIDEO.FPS,
-  DEMO_CULTURAL: SEGMENTS.DEMO_CULTURAL * VIDEO.FPS,
-  ARCHITECTURE: SEGMENTS.ARCHITECTURE * VIDEO.FPS,
-  MULTI_DOMAIN: SEGMENTS.MULTI_DOMAIN * VIDEO.FPS,
-  CLOSE: SEGMENTS.CLOSE * VIDEO.FPS,
-} as const;
+export const FRAMES = Object.fromEntries(
+  Object.entries(SEGMENTS).map(([k, v]) => [k, v * VIDEO.FPS])
+) as Record<keyof typeof SEGMENTS, number>;
 
-export const TOTAL_FRAMES =
-  FRAMES.INTRO +
-  FRAMES.PROBLEM +
-  FRAMES.DEMO_LANDING +
-  FRAMES.DEMO_PRONUNCIATION +
-  FRAMES.DEMO_GRAMMAR +
-  FRAMES.DEMO_CULTURAL +
-  FRAMES.ARCHITECTURE +
-  FRAMES.MULTI_DOMAIN +
-  FRAMES.CLOSE;
+export const TOTAL_FRAMES = Object.values(SEGMENTS).reduce((a, b) => a + b, 0) * VIDEO.FPS;
