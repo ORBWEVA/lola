@@ -36,24 +36,27 @@ export const VIDEO = {
   FPS: 30,
 } as const;
 
-// Segment durations — total ~3:30
+// Segment durations — sized to fit voiceover durations + 1s buffer
+// VO durations: intro=4.4, hook=10.9, same=4.6, problem=16.9, insight=6.5,
+// landing=7.0, pronunciation=8.9, grammar=9.3, cultural=11.6, research=5.7,
+// architecture=11.6, multidomain=5.7
 export const SEGMENTS = {
-  INTRO: 6,           // LoLA logo + glow
-  VEO_HOOK: 8,        // 1A classroom + 1B frustrated learner
-  VEO_SAME: 6,        // 1C same tutors
-  PROBLEM: 12,        // Text: problem statement
-  VEO_INSIGHT: 8,     // 2A two learners + 2B brand reveal
-  DEMO_LANDING: 5,    // Landing screenshot
-  DEMO_PRONUNCIATION: 10, // Demo page screenshot
-  DEMO_GRAMMAR: 10,   // Demo page screenshot
-  DEMO_CULTURAL: 10,  // Demo page screenshot
-  VEO_RESEARCH: 4,    // 7T research books transition
-  ARCHITECTURE: 10,   // Architecture diagram
-  VEO_DOMAINS: 8,     // 8A domain expansion
-  VEO_CREATOR: 8,     // 8B creator platform
-  MULTI_DOMAIN: 10,   // Text slides
-  VEO_CLOSE: 8,       // 9A Adelaide dawn
-  CLOSE: 8,           // Logo + tagline
+  INTRO: 6,              // VO 4.4s — fits
+  VEO_HOOK: 12,          // VO 10.9s — was 8, extended
+  VEO_SAME: 6,           // VO 4.6s — fits
+  PROBLEM: 18,           // VO 16.9s — was 12, extended
+  VEO_INSIGHT: 8,        // VO 6.5s — fits
+  DEMO_LANDING: 8,       // VO 7.0s — was 5, extended
+  DEMO_PRONUNCIATION: 10, // VO 8.9s — fits
+  DEMO_GRAMMAR: 11,      // VO 9.3s — was 10, extended
+  DEMO_CULTURAL: 13,     // VO 11.6s — was 10, extended
+  VEO_RESEARCH: 7,       // VO 5.7s — was 4, extended
+  ARCHITECTURE: 13,      // VO 11.6s — was 10, extended
+  VEO_DOMAINS: 8,        // no VO — keep
+  VEO_CREATOR: 8,        // no VO — keep
+  MULTI_DOMAIN: 7,       // VO 5.7s — trimmed from 10
+  VEO_CLOSE: 8,          // no VO — keep
+  CLOSE: 8,              // no VO — keep
 } as const;
 
 export const FRAMES = Object.fromEntries(
