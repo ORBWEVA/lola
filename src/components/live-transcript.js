@@ -26,6 +26,8 @@ class LiveTranscript extends HTMLElement {
   }
 
   addInputTranscript(text, isFinal) {
+    // Filter out noise artifacts from Gemini input transcription
+    if (!text || /^[\s<]*noise[\s>]*$/i.test(text.trim()) || (!isFinal && text.trim().length <= 2)) return;
     this.updateTranscript('user', text, isFinal);
   }
 
@@ -158,6 +160,7 @@ class LiveTranscript extends HTMLElement {
           font-size: 0.85rem;
           font-style: italic;
           opacity: 0.5;
+          display: none; /* Hide garbled input transcription — coach responses carry the conversation */
         }
 
         .bubble.temp {

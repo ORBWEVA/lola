@@ -1887,8 +1887,7 @@ class ViewLola extends HTMLElement {
         this.client.setVoice(ac.voice || "Kore");
       } else {
         this.client.setSystemInstructions(this._systemInstruction);
-        const voice = this._l1 === "en" ? "Puck" : "Aoede";
-        this.client.setVoice(voice);
+        this.client.setVoice("Aoede");
       }
       this.client.setInputAudioTranscription(true);
       this.client.setOutputAudioTranscription(true);
@@ -1915,6 +1914,10 @@ class ViewLola extends HTMLElement {
         } else if (
           response.type === MultimodalLiveResponseType.INPUT_TRANSCRIPTION
         ) {
+          // Skip noise artifacts from Gemini input transcription
+          const inputText = response.data.text || "";
+          if (/^[\s<]*noise[\s>]*$/i.test(inputText.trim())) return;
+
           // Dismiss hint on first speech
           const hint = this.querySelector("#session-hint");
           if (hint && !hint.classList.contains("hidden")) hint.classList.add("hidden");
@@ -1922,10 +1925,10 @@ class ViewLola extends HTMLElement {
           const transcript = this.querySelector("#desktop-transcript") || this.querySelector("live-transcript");
           if (transcript)
             transcript.addInputTranscript(
-              response.data.text,
+              inputText,
               response.data.finished
             );
-          this.detectFrustration(response.data.text);
+          this.detectFrustration(inputText);
           // Accumulate transcript for persistence
           if (response.data.finished && response.data.text?.trim()) {
             this._transcriptLog.push({ role: "user", content: response.data.text.trim() });
@@ -1979,7 +1982,7 @@ class ViewLola extends HTMLElement {
       try {
         const deviceId = localStorage.getItem("lola_device_id");
         if (deviceId) {
-          const voice = this._l1 === "en" ? "Puck" : "Aoede";
+          const voice = "Aoede";
           const startRes = await fetch("/api/sessions/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

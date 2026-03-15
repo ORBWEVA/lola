@@ -140,7 +140,7 @@ export class GeminiLiveAPI {
     this.systemInstructions = "";
     this.googleGrounding = false;
     this.enableAffectiveDialog = false; // Not supported on native audio models
-    this.voiceName = "Puck"; // Default voice
+    this.voiceName = "Aoede"; // Default voice — female, matches avatar images
     this.temperature = 0.7; // Lower for consistent instruction-following
     this.proactivity = null; // Not supported on native audio models
     this.inputAudioTranscription = false;

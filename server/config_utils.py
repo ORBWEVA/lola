@@ -64,6 +64,6 @@ def get_model_name():
 
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
-        return "gemini-2.5-flash-native-audio-preview-12-2025"
+        return "gemini-2.5-flash-native-audio-latest"
 
     return "gemini-live-2.5-flash-native-audio"
